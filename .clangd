@@ -1,0 +1,43 @@
+CompileFlags:
+  CompilationDatabase: build/mingw-gcc-debug
+  Add:
+    - -std=c++23
+  Remove:
+    - /Fo*
+    - /Fd*
+    - /FS
+
+Completion:
+  AllScopes: Yes
+  HeaderInsertion: IWYU
+
+Diagnostics:
+  MissingIncludes: Strict
+  UnusedIncludes: Strict
+  ClangTidy:
+    Add:
+      - modernize-*
+      - performance-*
+      - bugprone-*
+      - readability-*
+      - cppcoreguidelines-*
+    Remove:
+      - modernize-use-trailing-return-type
+      - readability-identifier-length
+      - readability-magic-numbers
+      - cppcoreguidelines-avoid-magic-numbers
+      - cppcoreguidelines-pro-bounds-pointer-arithmetic
+      - cppcoreguidelines-pro-bounds-array-to-pointer-decay
+      - cppcoreguidelines-pro-bounds-constant-array-index
+      - cppcoreguidelines-owning-memory
+
+Index:
+  Background: Build
+
+InlayHints:
+  Enabled: Yes
+  ParameterNames: Yes
+  DeducedTypes: Yes
+  Designators: Yes
+  BlockEnd: Yes
+  DefaultArguments: Yes

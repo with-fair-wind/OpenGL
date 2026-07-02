@@ -1,0 +1,104 @@
+﻿{
+  "version": 8,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 28,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "_base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}"
+    },
+    {
+      "name": "_mingw-gcc",
+      "hidden": true,
+      "description": "MinGW GCC (MSYS2 UCRT64). Requires ucrt64/bin on PATH.",
+      "inherits": "_base",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "x86_64-w64-mingw32-gcc",
+        "CMAKE_CXX_COMPILER": "x86_64-w64-mingw32-g++"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "_mingw-clang",
+      "hidden": true,
+      "description": "MinGW Clang (MSYS2 CLANG64). Requires clang64/bin on PATH.",
+      "inherits": "_base",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "x86_64-w64-mingw32-clang",
+        "CMAKE_CXX_COMPILER": "x86_64-w64-mingw32-clang++"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "mingw-gcc-debug",
+      "displayName": "MinGW GCC Debug",
+      "description": "Debug build with MSYS2 UCRT64 GCC. Run Conan install for this preset first.",
+      "inherits": "_mingw-gcc",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/mingw-gcc-debug/build/Debug/generators/conan_toolchain.cmake"
+      }
+    },
+    {
+      "name": "mingw-gcc-release",
+      "displayName": "MinGW GCC Release",
+      "description": "Release build with MSYS2 UCRT64 GCC. Run Conan install for this preset first.",
+      "inherits": "_mingw-gcc",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/mingw-gcc-release/build/Release/generators/conan_toolchain.cmake"
+      }
+    },
+    {
+      "name": "mingw-clang-debug",
+      "displayName": "MinGW Clang Debug",
+      "description": "Debug build with MSYS2 CLANG64 Clang. Run Conan install for this preset first.",
+      "inherits": "_mingw-clang",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/mingw-clang-debug/build/Debug/generators/conan_toolchain.cmake"
+      }
+    },
+    {
+      "name": "mingw-clang-release",
+      "displayName": "MinGW Clang Release",
+      "description": "Release build with MSYS2 CLANG64 Clang. Run Conan install for this preset first.",
+      "inherits": "_mingw-clang",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/mingw-clang-release/build/Release/generators/conan_toolchain.cmake"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "mingw-gcc-debug",
+      "configurePreset": "mingw-gcc-debug"
+    },
+    {
+      "name": "mingw-gcc-release",
+      "configurePreset": "mingw-gcc-release"
+    },
+    {
+      "name": "mingw-clang-debug",
+      "configurePreset": "mingw-clang-debug"
+    },
+    {
+      "name": "mingw-clang-release",
+      "configurePreset": "mingw-clang-release"
+    }
+  ]
+}

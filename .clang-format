@@ -1,0 +1,44 @@
+---
+BasedOnStyle: Google
+Language: Cpp
+Standard: Latest
+
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 100
+
+AccessModifierOffset: -4
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortLambdasOnASingleLine: All
+
+BreakBeforeBraces: Attach
+BreakConstructorInitializers: BeforeColon
+BreakInheritanceList: BeforeColon
+
+DerivePointerAlignment: false
+PointerAlignment: Left
+ReferenceAlignment: Left
+
+SpaceAfterTemplateKeyword: true
+SpaceBeforeCpp11BracedList: false
+SpaceBeforeRangeBasedForLoopColon: true
+
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^<[a-z_]+>$'
+    Priority: 1
+  - Regex: '^<glad/.*>$'
+    Priority: 2
+  - Regex: '^<GLFW/.*>$'
+    Priority: 3
+  - Regex: '^<.*\.h(pp)?>$'
+    Priority: 4
+  - Regex: '^".*"$'
+    Priority: 5
+SortIncludes: CaseSensitive
+
+FixNamespaceComments: true
+NamespaceIndentation: None
