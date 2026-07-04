@@ -1,4 +1,4 @@
-﻿{
+{
   "version": 8,
   "cmakeMinimumRequired": {
     "major": 3,
@@ -7,16 +7,35 @@
   },
   "configurePresets": [
     {
-      "name": "_base",
+      "name": "_ninja",
       "hidden": true,
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/${presetName}"
     },
     {
+      "name": "_ninja-multi",
+      "hidden": true,
+      "generator": "Ninja Multi-Config",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_CONFIGURATION_TYPES": "Debug;Release"
+      }
+    },
+    {
+      "name": "_vs2026",
+      "hidden": true,
+      "generator": "Visual Studio 18 2026",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_CONFIGURATION_TYPES": "Debug;Release"
+      }
+    },
+    {
       "name": "_mingw-gcc",
       "hidden": true,
       "description": "MinGW GCC (MSYS2 UCRT64). Requires ucrt64/bin on PATH.",
-      "inherits": "_base",
+      "inherits": "_ninja",
       "cacheVariables": {
         "CMAKE_C_COMPILER": "x86_64-w64-mingw32-gcc",
         "CMAKE_CXX_COMPILER": "x86_64-w64-mingw32-g++"
@@ -31,11 +50,82 @@
       "name": "_mingw-clang",
       "hidden": true,
       "description": "MinGW Clang (MSYS2 CLANG64). Requires clang64/bin on PATH.",
-      "inherits": "_base",
+      "inherits": "_ninja",
       "cacheVariables": {
         "CMAKE_C_COMPILER": "x86_64-w64-mingw32-clang",
         "CMAKE_CXX_COMPILER": "x86_64-w64-mingw32-clang++"
       },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "_msvc-ninja",
+      "hidden": true,
+      "description": "MSVC cl with Ninja. Run from a Visual Studio Developer PowerShell.",
+      "inherits": "_ninja",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "cl",
+        "CMAKE_CXX_COMPILER": "cl"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "_clang-cl",
+      "hidden": true,
+      "description": "LLVM clang-cl with Ninja. Run from a Visual Studio Developer PowerShell.",
+      "inherits": "_ninja",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang-cl",
+        "CMAKE_CXX_COMPILER": "clang-cl"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "_msvc-ninja-multi",
+      "hidden": true,
+      "description": "MSVC cl with Ninja Multi-Config. Run from a Visual Studio Developer PowerShell.",
+      "inherits": "_ninja-multi",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "cl",
+        "CMAKE_CXX_COMPILER": "cl"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "_clang-cl-ninja-multi",
+      "hidden": true,
+      "description": "LLVM clang-cl with Ninja Multi-Config. Run from a Visual Studio Developer PowerShell.",
+      "inherits": "_ninja-multi",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang-cl",
+        "CMAKE_CXX_COMPILER": "clang-cl"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "_msvc-vs2026",
+      "hidden": true,
+      "description": "MSVC cl with Visual Studio 18 2026.",
+      "inherits": "_vs2026",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -81,6 +171,73 @@
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/mingw-clang-release/build/Release/generators/conan_toolchain.cmake"
       }
+    },
+    {
+      "name": "msvc-ninja-debug",
+      "displayName": "MSVC Ninja Debug",
+      "description": "Debug build with MSVC cl and Ninja. Run Conan install for this preset first.",
+      "inherits": "_msvc-ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/msvc-ninja-debug/build/Debug/generators/conan_toolchain.cmake"
+      }
+    },
+    {
+      "name": "msvc-ninja-release",
+      "displayName": "MSVC Ninja Release",
+      "description": "Release build with MSVC cl and Ninja. Run Conan install for this preset first.",
+      "inherits": "_msvc-ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/msvc-ninja-release/build/Release/generators/conan_toolchain.cmake"
+      }
+    },
+    {
+      "name": "clang-cl-debug",
+      "displayName": "clang-cl Debug",
+      "description": "Debug build with LLVM clang-cl and Ninja. Run Conan install for this preset first.",
+      "inherits": "_clang-cl",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/clang-cl-debug/build/Debug/generators/conan_toolchain.cmake"
+      }
+    },
+    {
+      "name": "clang-cl-release",
+      "displayName": "clang-cl Release",
+      "description": "Release build with LLVM clang-cl and Ninja. Run Conan install for this preset first.",
+      "inherits": "_clang-cl",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/clang-cl-release/build/Release/generators/conan_toolchain.cmake"
+      }
+    },
+    {
+      "name": "msvc-ninja-multi",
+      "displayName": "MSVC Ninja Multi-Config",
+      "description": "Multi-config build with MSVC cl and Ninja Multi-Config. Run Debug and Release Conan installs for this preset first.",
+      "inherits": "_msvc-ninja-multi",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/msvc-ninja-multi/build/generators/conan_toolchain.cmake"
+      }
+    },
+    {
+      "name": "clang-cl-ninja-multi",
+      "displayName": "clang-cl Ninja Multi-Config",
+      "description": "Multi-config build with LLVM clang-cl and Ninja Multi-Config. Run Debug and Release Conan installs for this preset first.",
+      "inherits": "_clang-cl-ninja-multi",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/clang-cl-ninja-multi/build/generators/conan_toolchain.cmake"
+      }
+    },
+    {
+      "name": "msvc-vs2026",
+      "displayName": "MSVC VS2026",
+      "description": "Multi-config build with MSVC cl and Visual Studio 18 2026. Run Debug and Release Conan installs for this preset first.",
+      "inherits": "_msvc-vs2026",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/msvc-vs2026/build/generators/conan_toolchain.cmake"
+      }
     }
   ],
   "buildPresets": [
@@ -99,6 +256,58 @@
     {
       "name": "mingw-clang-release",
       "configurePreset": "mingw-clang-release"
+    },
+    {
+      "name": "msvc-ninja-debug",
+      "configurePreset": "msvc-ninja-debug"
+    },
+    {
+      "name": "msvc-ninja-release",
+      "configurePreset": "msvc-ninja-release"
+    },
+    {
+      "name": "clang-cl-debug",
+      "configurePreset": "clang-cl-debug"
+    },
+    {
+      "name": "clang-cl-release",
+      "configurePreset": "clang-cl-release"
+    },
+    {
+      "name": "msvc-ninja-multi-debug",
+      "displayName": "MSVC Ninja Multi-Config Debug",
+      "configurePreset": "msvc-ninja-multi",
+      "configuration": "Debug"
+    },
+    {
+      "name": "msvc-ninja-multi-release",
+      "displayName": "MSVC Ninja Multi-Config Release",
+      "configurePreset": "msvc-ninja-multi",
+      "configuration": "Release"
+    },
+    {
+      "name": "clang-cl-ninja-multi-debug",
+      "displayName": "clang-cl Ninja Multi-Config Debug",
+      "configurePreset": "clang-cl-ninja-multi",
+      "configuration": "Debug"
+    },
+    {
+      "name": "clang-cl-ninja-multi-release",
+      "displayName": "clang-cl Ninja Multi-Config Release",
+      "configurePreset": "clang-cl-ninja-multi",
+      "configuration": "Release"
+    },
+    {
+      "name": "msvc-vs2026-debug",
+      "displayName": "MSVC VS2026 Debug",
+      "configurePreset": "msvc-vs2026",
+      "configuration": "Debug"
+    },
+    {
+      "name": "msvc-vs2026-release",
+      "displayName": "MSVC VS2026 Release",
+      "configurePreset": "msvc-vs2026",
+      "configuration": "Release"
     }
   ]
 }

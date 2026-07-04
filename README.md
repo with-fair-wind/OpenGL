@@ -28,6 +28,7 @@ Conan 当前管理这些库：
 |       `-- 01_hello_window/
 |-- cmake/                   # 项目级 CMake helper
 |-- conan/                   # 本仓库 Conan profile
+|-- docs/                    # 构建说明和项目文档
 |-- CMakeLists.txt           # 根构建入口
 |-- CMakePresets.json        # 常用 configure/build preset
 `-- conanfile.py             # Conan 2 依赖声明
@@ -44,38 +45,7 @@ third_party/                 # 仅放无法通过 Conan 管理的极少数依赖
 
 ## 构建
 
-`CMakePresets.json` 和 `conan/profiles/*` 不写本机绝对路径，要求对应 MSYS2 环境已经在 `PATH` 上：
-
-- GCC preset: 需要 `ucrt64/bin`，并能找到 `x86_64-w64-mingw32-g++`。
-- Clang preset: 需要 `clang64/bin`，并能找到 `x86_64-w64-mingw32-clang++`。
-
-先安装依赖，再配置和编译。下面以 MinGW GCC Debug 为例：
-
-```powershell
-conan install . -of build/mingw-gcc-debug -pr:h conan/profiles/mingw-gcc -pr:b conan/profiles/mingw-gcc -s build_type=Debug --build=missing
-cmake --preset mingw-gcc-debug
-cmake --build --preset mingw-gcc-debug
-```
-
-Release 构建：
-
-```powershell
-conan install . -of build/mingw-gcc-release -pr:h conan/profiles/mingw-gcc -pr:b conan/profiles/mingw-gcc -s build_type=Release --build=missing
-cmake --preset mingw-gcc-release
-cmake --build --preset mingw-gcc-release
-```
-
-如果使用 Clang preset，把 `mingw-gcc-debug` 替换为 `mingw-clang-debug`，并把 Conan profile 替换为 `conan/profiles/mingw-clang`。
-
-## 运行第一个示例
-
-构建完成后运行：
-
-```powershell
-.\build\mingw-gcc-debug\apps\01_getting_started\01_hello_window\01_getting_started__01_hello_window.exe
-```
-
-窗口打开后，按 `Esc` 退出。
+完整构建矩阵、Conan 安装方式、单配置/多配置生成器说明，以及运行第一个示例的命令见 [构建指南](docs/build.md)。
 
 ## 学习路线
 
