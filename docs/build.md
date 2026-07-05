@@ -243,18 +243,24 @@ cmake --build --preset msvc-vs2026-release
 build/msvc-vs2026/OpenGLLab.sln
 ```
 
-## 运行第一个示例
+## 运行示例
 
 构建完成后运行对应 preset 目录下的可执行文件。单配置生成器示例：
 
 ```powershell
 .\build\mingw-gcc-debug\apps\01_getting_started\01_hello_window\01_getting_started__01_hello_window.exe
+.\build\mingw-gcc-debug\apps\01_getting_started\02_hello_triangle\01_getting_started__02_hello_triangle.exe
+.\build\mingw-gcc-debug\apps\01_getting_started\03_shaders\01_getting_started__03_shaders.exe
+.\build\mingw-gcc-debug\apps\01_getting_started\04_textures\01_getting_started__04_textures.exe
 ```
 
 多配置生成器通常会在目标目录下多一层配置名，例如 `Debug` 或 `Release`。以 Ninja Multi-Config 为例：
 
 ```powershell
 .\build\msvc-ninja-multi\apps\01_getting_started\01_hello_window\Debug\01_getting_started__01_hello_window.exe
+.\build\msvc-ninja-multi\apps\01_getting_started\02_hello_triangle\Debug\01_getting_started__02_hello_triangle.exe
+.\build\msvc-ninja-multi\apps\01_getting_started\03_shaders\Debug\01_getting_started__03_shaders.exe
+.\build\msvc-ninja-multi\apps\01_getting_started\04_textures\Debug\01_getting_started__04_textures.exe
 ```
 
-窗口打开后，按 `Esc` 退出。
+窗口打开后，按 `Esc` 退出。纹理示例会从源码树的 `assets/textures/checker.ppm` 加载图片；如果移动仓库目录，请重新 configure/build，让 `OPENGL_LAB_ASSET_ROOT` 更新为新的路径。

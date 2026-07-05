@@ -17,7 +17,7 @@ Conan 当前管理这些库：
 - `glfw`: 创建窗口、OpenGL 上下文、处理输入。
 - `glad`: 加载 OpenGL 函数。
 - `glm`: 图形数学库。
-- `stb`: 后续加载图片纹理。
+- `stb`: 加载图片纹理。
 
 ## 项目结构
 
@@ -25,7 +25,12 @@ Conan 当前管理这些库：
 .
 |-- apps/                    # 按 LearnOpenGL 章节组织的可执行示例
 |   `-- 01_getting_started/
-|       `-- 01_hello_window/
+|       |-- 01_hello_window/
+|       |-- 02_hello_triangle/
+|       |-- 03_shaders/
+|       `-- 04_textures/
+|-- assets/                  # shader、纹理、模型等资源
+|   `-- textures/
 |-- cmake/                   # 项目级 CMake helper
 |-- conan/                   # 本仓库 Conan profile
 |-- docs/                    # 构建说明和项目文档
@@ -37,7 +42,6 @@ Conan 当前管理这些库：
 未来建议继续扩展：
 
 ```text
-assets/                      # shader、纹理、模型等资源
 src/opengl_lab/              # 可复用 C++ 封装
 tests/                       # 单元测试或小型验证测试
 third_party/                 # 仅放无法通过 Conan 管理的极少数依赖
@@ -45,19 +49,18 @@ third_party/                 # 仅放无法通过 Conan 管理的极少数依赖
 
 ## 构建
 
-完整构建矩阵、Conan 安装方式、单配置/多配置生成器说明，以及运行第一个示例的命令见 [构建指南](docs/build.md)。
+完整构建矩阵、Conan 安装方式、单配置/多配置生成器说明，以及运行示例的命令见 [构建指南](docs/build.md)。
 
 ## 学习路线
 
 第一阶段建议按这个顺序添加示例：
 
-1. 创建窗口
-2. 你好，窗口
-3. 你好，三角形
-4. 着色器
-5. 纹理
-6. 变换
-7. 坐标系统
-8. 摄像机
+1. 创建窗口 / 你好，窗口：`apps/01_getting_started/01_hello_window/`
+2. 你好，三角形：`apps/01_getting_started/02_hello_triangle/`
+3. 着色器：`apps/01_getting_started/03_shaders/`
+4. 纹理：`apps/01_getting_started/04_textures/`
+5. 变换
+6. 坐标系统
+7. 摄像机
 
 每个示例先保持独立可运行；当重复代码变多时，再把窗口、Shader、纹理、相机等内容提取到 `src/opengl_lab/` 中。

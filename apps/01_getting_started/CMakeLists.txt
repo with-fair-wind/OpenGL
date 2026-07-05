@@ -1,2 +1,4 @@
 add_subdirectory(01_hello_window)
-
+add_subdirectory(02_hello_triangle)
+add_subdirectory(03_shaders)
+add_subdirectory(04_textures)
