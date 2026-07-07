@@ -1,2 +1,2 @@
 add_subdirectory(01_getting_started)
-
+add_subdirectory(02_lighting)

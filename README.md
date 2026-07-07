@@ -24,11 +24,18 @@ Conan 当前管理这些库：
 ```text
 .
 |-- apps/                    # 按 LearnOpenGL 章节组织的可执行示例
-|   `-- 01_getting_started/
-|       |-- 01_hello_window/
-|       |-- 02_hello_triangle/
-|       |-- 03_shaders/
-|       `-- 04_textures/
+|   |-- 01_getting_started/
+|   |   |-- 01_hello_window/
+|   |   |-- 02_hello_triangle/
+|   |   |-- 03_shaders/
+|   |   |-- 04_textures/
+|   |   |-- 05_transformations/
+|   |   |-- 06_coordinate_systems/
+|   |   `-- 07_camera/
+|   `-- 02_lighting/
+|       |-- 01_colors/
+|       |-- 02_basic_lighting/
+|       `-- 03_materials/
 |-- assets/                  # shader、纹理、模型等资源
 |   `-- textures/
 |-- cmake/                   # 项目级 CMake helper
@@ -59,8 +66,14 @@ third_party/                 # 仅放无法通过 Conan 管理的极少数依赖
 2. 你好，三角形：`apps/01_getting_started/02_hello_triangle/`
 3. 着色器：`apps/01_getting_started/03_shaders/`
 4. 纹理：`apps/01_getting_started/04_textures/`
-5. 变换
-6. 坐标系统
-7. 摄像机
+5. 变换：`apps/01_getting_started/05_transformations/`
+6. 坐标系统：`apps/01_getting_started/06_coordinate_systems/`
+7. 摄像机：`apps/01_getting_started/07_camera/`
+
+第二阶段进入光照：
+
+1. 颜色：`apps/02_lighting/01_colors/`
+2. 基础光照：`apps/02_lighting/02_basic_lighting/`
+3. 材质：`apps/02_lighting/03_materials/`
 
 每个示例先保持独立可运行；当重复代码变多时，再把窗口、Shader、纹理、相机等内容提取到 `src/opengl_lab/` 中。

@@ -1,0 +1,3 @@
+add_subdirectory(01_colors)
+add_subdirectory(02_basic_lighting)
+add_subdirectory(03_materials)

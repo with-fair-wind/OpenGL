@@ -252,6 +252,12 @@ build/msvc-vs2026/OpenGLLab.sln
 .\build\mingw-gcc-debug\apps\01_getting_started\02_hello_triangle\01_getting_started__02_hello_triangle.exe
 .\build\mingw-gcc-debug\apps\01_getting_started\03_shaders\01_getting_started__03_shaders.exe
 .\build\mingw-gcc-debug\apps\01_getting_started\04_textures\01_getting_started__04_textures.exe
+.\build\mingw-gcc-debug\apps\01_getting_started\05_transformations\01_getting_started__05_transformations.exe
+.\build\mingw-gcc-debug\apps\01_getting_started\06_coordinate_systems\01_getting_started__06_coordinate_systems.exe
+.\build\mingw-gcc-debug\apps\01_getting_started\07_camera\01_getting_started__07_camera.exe
+.\build\mingw-gcc-debug\apps\02_lighting\01_colors\02_lighting__01_colors.exe
+.\build\mingw-gcc-debug\apps\02_lighting\02_basic_lighting\02_lighting__02_basic_lighting.exe
+.\build\mingw-gcc-debug\apps\02_lighting\03_materials\02_lighting__03_materials.exe
 ```
 
 多配置生成器通常会在目标目录下多一层配置名，例如 `Debug` 或 `Release`。以 Ninja Multi-Config 为例：
@@ -261,6 +267,12 @@ build/msvc-vs2026/OpenGLLab.sln
 .\build\msvc-ninja-multi\apps\01_getting_started\02_hello_triangle\Debug\01_getting_started__02_hello_triangle.exe
 .\build\msvc-ninja-multi\apps\01_getting_started\03_shaders\Debug\01_getting_started__03_shaders.exe
 .\build\msvc-ninja-multi\apps\01_getting_started\04_textures\Debug\01_getting_started__04_textures.exe
+.\build\msvc-ninja-multi\apps\01_getting_started\05_transformations\Debug\01_getting_started__05_transformations.exe
+.\build\msvc-ninja-multi\apps\01_getting_started\06_coordinate_systems\Debug\01_getting_started__06_coordinate_systems.exe
+.\build\msvc-ninja-multi\apps\01_getting_started\07_camera\Debug\01_getting_started__07_camera.exe
+.\build\msvc-ninja-multi\apps\02_lighting\01_colors\Debug\02_lighting__01_colors.exe
+.\build\msvc-ninja-multi\apps\02_lighting\02_basic_lighting\Debug\02_lighting__02_basic_lighting.exe
+.\build\msvc-ninja-multi\apps\02_lighting\03_materials\Debug\02_lighting__03_materials.exe
 ```
 
-窗口打开后，按 `Esc` 退出。纹理示例会从源码树的 `assets/textures/checker.ppm` 加载图片；如果移动仓库目录，请重新 configure/build，让 `OPENGL_LAB_ASSET_ROOT` 更新为新的路径。
+窗口打开后，按 `Esc` 退出。摄像机示例会捕获鼠标光标，使用 `W/A/S/D` 移动、鼠标移动调整视角、滚轮调整 FOV。纹理相关示例会从源码树的 `assets/textures/checker.ppm` 加载图片；如果移动仓库目录，请重新 configure/build，让 `OPENGL_LAB_ASSET_ROOT` 更新为新的路径。
