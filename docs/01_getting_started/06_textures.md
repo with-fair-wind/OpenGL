@@ -103,7 +103,7 @@ glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
 纹理坐标不依赖分辨率，可以是任意浮点值，所以 OpenGL 必须知道如何把**纹理像素**（Texture Pixel，也叫 Texel）映射到纹理坐标上。可以把 Texel 理解为「把图片不断放大后看到的那个最小色块」，注意它与纹理坐标是两回事：纹理坐标是你给模型顶点设置的那个数组，OpenGL 按它去纹理图像上查找、采样 Texel 的颜色。物体很大而纹理分辨率很低时，这个选择尤为关键。纹理过滤有许多选项，本节只讨论最重要的两种：`GL_NEAREST` 和 `GL_LINEAR`。
 
-`GL_NEAREST`（也叫**邻近过滤**，Nearest Neighbor Filtering）是 OpenGL 默认的过滤方式：选择中心点离纹理坐标最近的纹理像素。下图中加号是纹理坐标，左上角纹理像素的中心离它最近，于是它的颜色被选为样本颜色：
+`GL_NEAREST`（也叫**邻近过滤**，Nearest Neighbor Filtering）：选择中心点离纹理坐标最近的纹理像素作为样本。下图中加号是纹理坐标，左上角纹理像素的中心离它最近，于是它的颜色被选为样本颜色：（原教程称它为 OpenGL「默认」过滤方式并不准确——按规范，缩小过滤默认是 `GL_NEAREST_MIPMAP_LINEAR`、放大过滤默认是 `GL_LINEAR`；`GL_NEAREST` 只是因为最简单直观而常被最先介绍。）
 
 ![](../img/01/06/filter_nearest.png)
 
@@ -152,6 +152,13 @@ glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 > **常见误解：** 把放大过滤也设成 mipmap 选项。
 > **纠正：** 这是经典错误——mipmap 只在纹理被**缩小**时使用，放大时根本不会用到。把 `GL_TEXTURE_MAG_FILTER` 设为 `GL_LINEAR_MIPMAP_LINEAR` 等选项不但没有效果，还会产生 `GL_INVALID_ENUM` 错误。本节仓库示例的做法是：min filter 用 `GL_LINEAR_MIPMAP_LINEAR`（缩小 + 级别间插值，质量最好），mag filter 用 `GL_LINEAR`（放大时线性过滤）。
+
+> **进阶（各向异性过滤）：** **mipmap 解决了「缩小」时的闪烁，但倾斜表面仍会模糊——这是各向异性过滤的用武之地**：
+>
+> - 纹理与视线不垂直时，一个片段覆盖的纹理区域是拉长的四边形，普通 mipmap 只能取模糊的平均值。
+> - 各向异性过滤（Anisotropic Filtering）沿这个四边形的形状在多个方向分别采样再混合，画面清晰得多，代价是采样次数增加。
+> - 它在 OpenGL 3.3 里属于**扩展**（`GL_EXT_texture_filter_anisotropic`）：先确认扩展存在，再用 `glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY)` 查询上限（通常为 16），最后用 `glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, amount)` 设置，超过上限的值会被截断。
+> - 本示例的棋盘格纹理正对相机，看不出差别；遇到倾斜表面（地面、墙面）时再启用它。
 
 ## 加载与创建纹理
 
@@ -507,6 +514,13 @@ flowchart LR
 
 **关键在两级间接**：uniform 存单元编号（整数）→ 单元上绑着纹理对象 → 纹理对象里才是图片和采样参数。`glUniform1i` 设置一次即可；而绑定（`glActiveTexture` + `glBindTexture`）在需要换图或每次绘制前重新执行。
 
+> **进阶（纹理单元上限与查询）：** **片段着色器里能同时使用的纹理数量受硬件限制，可以用 `glGetIntegerv` 查询**：
+>
+> - 规范保证片段阶段至少有 16 个纹理单元（`GL_TEXTURE0`~`GL_TEXTURE15`），实际硬件通常更多：`GL_MAX_TEXTURE_IMAGE_UNITS` 给出片段阶段的上限，`GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS` 给出所有着色阶段合计的上限。
+> - 单元编号连续，`GL_TEXTURE0 + n` 可循环访问；但 `glActiveTexture` 传入超出上限的单元会报 `GL_INVALID_ENUM`，动态绑定多个纹理前应先查询。
+> - 纹理单元是「绑定槽位」，与纹理对象数量无关：同一张纹理可以绑到多个单元，多个采样器也可以指向同一个单元。
+> - 本示例只用 0 号单元，远低于任何硬件的上限；多纹理的真正用武之地在后面的「材质」章节（漫反射、镜面反射、法线贴图等）。
+
 原教程随后加载了第二张纹理（[你学习 OpenGL 时的表情](../img/01/06/awesomeface.png)，一张带 alpha 通道的 PNG），并在片段着色器里用 `mix` 函数混合两张图：
 
 ```c++
@@ -561,6 +575,13 @@ stbi_set_flip_vertically_on_load(true);
 本仓库示例在 `create_texture()` 里就是这么做的（`stbi_set_flip_vertically_on_load(1)`），所以运行示例不会出现上下颠倒。翻转之后的效果：
 
 ![](../img/01/06/textures_combined2.png)
+
+> **进阶（sRGB 与线性空间）：** **图片文件里的颜色是「伽马编码」的，直接当线性颜色参与光照会得到错误结果**：
+>
+> - 显示器对数值的亮度响应不是线性的，sRGB 图片因此把暗部多分配一些数值——文件里的 0.5 并不等于「一半亮度」。
+> - 正确流程是：采样时把 sRGB **解码**成线性值，在**线性空间**里做光照与混合，最后再**编码**回 sRGB 输出；否则暗部会算错，画面偏暗或偏灰。
+> - 最省事的做法是让驱动代劳：`glTexImage2D` 内部格式用 `GL_SRGB8`（带 alpha 用 `GL_SRGB8_ALPHA8`），硬件每次采样时自动解码；输出侧 `glEnable(GL_FRAMEBUFFER_SRGB)` 让写入帧缓冲时自动编码。
+> - 本示例没有光照、直接用采样颜色输出，sRGB 与否看不出区别；到「光照」章节如果发现颜色偏暗、偏灰，最先检查这条链路。
 
 ## 练习
 

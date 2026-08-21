@@ -17,7 +17,7 @@
 
 **一句话核心：** 向量是一个有**方向**和**大小**（长度）的量，它描述的是「怎么走」而不是「在哪」——同一个向量可以平移到空间中的任何位置，其值不变。
 
-向量最基本的定义就是一个方向。更正式地说，向量有一个**方向**（Direction）和**大小**（Magnitude，也叫强度或长度）。你可以把向量想象成藏宝图上的指示：「向左走 10 步，向北走 3 步，然后向右走 5 步」；「左」是方向，「10 步」是向量的长度。这个指示一共包含 3 个向量。向量可以是任意维度（Dimension）的，但我们通常只使用 2 至 4 维：2 维向量表示一个平面上的方向（想象 2D 图像），3 维向量表示 3D 世界中的方向。下面你会看到 3 个向量，每个向量在 2D 图像中都用一个箭头 (x, y) 表示——你可以把 2D 向量当作 z 坐标为 0 的 3D 向量。由于向量表示的是方向，起始于何处并不会改变它的值，下图中的向量 \(\color{red}{\bar{v}}\) 和 \(\color{blue}{\bar{w}}\) 虽然起点不同，却是相等的：
+向量最基本的定义就是一个方向。更正式地说，向量有一个**方向**（Direction）和**大小**（Magnitude，也叫强度或长度）。你可以把向量想象成藏宝图上的指示：「向左走 10 步，向北走 3 步，然后向右走 5 步」；「左」是方向，「10 步」是向量的长度。这个指示一共包含 3 个向量。向量可以是任意维度（Dimension）的，但我们通常只使用 2 至 4 维：2 维向量表示一个平面上的方向（想象 2D 图形），3 维向量表示 3D 世界中的方向。下面你会看到 3 个向量，每个向量在 2D 图像中都用一个箭头 (x, y) 表示——你可以把 2D 向量当作 z 坐标为 0 的 3D 向量。由于向量表示的是方向，起始于何处并不会改变它的值，下图中的向量 \(\color{red}{\bar{v}}\) 和 \(\color{blue}{\bar{w}}\) 虽然起点不同，却是相等的：
 
 ![](../img/01/07/vectors.png)
 
@@ -143,7 +143,7 @@ $$
 \begin{bmatrix} 1 & 2 & 3 \\ 4 & 5 & 6 \end{bmatrix}
 $$
 
-矩阵通过 (i, j) 索引，i 是行，j 是列，所以上面的矩阵叫 2×3 矩阵（3 列 2 行），也叫做矩阵的**维度**（Dimension）。这与索引 2D 图像时的 (x, y) 相反：元素 4 的索引是 (2, 1)（第二行，第一列）。
+矩阵通过 (i, j) 索引，i 是行，j 是列，所以上面的矩阵叫 2×3 矩阵（3 列 2 行），也叫做矩阵的**维度**（Dimension）。这与索引 2D 图形时的 (x, y) 相反：元素 4 的索引是 (2, 1)（第二行，第一列）。
 
 ## 矩阵的加减
 
@@ -217,7 +217,7 @@ $$
 \begin{bmatrix} \color{red}{S_1} & \color{red}0 & \color{red}0 & \color{red}0 \\ \color{green}0 & \color{green}{S_2} & \color{green}0 & \color{green}0 \\ \color{blue}0 & \color{blue}0 & \color{blue}{S_3} & \color{blue}0 \\ \color{purple}0 & \color{purple}0 & \color{purple}0 & \color{purple}1 \end{bmatrix} \cdot \begin{pmatrix} x \\ y \\ z \\ 1 \end{pmatrix} = \begin{pmatrix} \color{red}{S_1} \cdot x \\ \color{green}{S_2} \cdot y \\ \color{blue}{S_3} \cdot z \\ 1 \end{pmatrix}
 $$
 
-每个对角线元素与向量的对应元素相乘：把 1 换成 3，向量就放大 3 倍。注意 w 分量保持 1——在 3D 空间中缩放 w 分量无意义，w 另有用途。如果各轴缩放因子不同（例如把向量 (3, 2) 沿 x 轴缩放 0.5、沿 y 轴缩放 2 倍），称为**不均匀**（Non-uniform）缩放；各轴因子相同则称为**均匀缩放**（Uniform Scale）：
+每个对角线元素与向量的对应元素相乘：把 1 换成 3，向量就放大 3 倍。注意 w 分量保持 1——w 分量另有用途（见下文「位移」的齐次坐标说明）。如果各轴缩放因子不同（例如把向量 (3, 2) 沿 x 轴缩放 0.5、沿 y 轴缩放 2 倍），称为**不均匀**（Non-uniform）缩放；各轴因子相同则称为**均匀缩放**（Uniform Scale）：
 
 ![](../img/01/07/vectors_scale.png)
 
@@ -237,11 +237,17 @@ $$
 >
 > 如果齐次坐标为 0，该向量是**方向向量**（Direction Vector）——w = 0 的向量不能被位移（这也正是「方向不能平移」的数学表达）。
 
+> **进阶（齐次坐标与 w 的透视作用）：** w 不只是「凑出 4×4 矩阵」的第四个数，下一章的透视投影会让它承担真正的工作：
+>
+> - 位置向量 w = 1（可以被位移），方向向量 w = 0（不能被位移）；把 w 当作第四个分量，位移这类 3×3 矩阵放不下的变换才能写进一个矩阵。
+> - 透视投影矩阵会把 w 设为观察空间深度的相反数（\(w = -z_{view}\)）；顶点着色器输出后，OpenGL 把 x、y、z 都除以 w——离相机越远 w 越大、坐标越小，于是产生近大远小。
+> - 换句话说，可以把 w 理解为变换管线传递的「缩放因子」：理解了「w = 1 是位置、w = 0 是方向」，后面看任何投影矩阵都不会再困惑。
+
 有了位移矩阵，我们就可以在 3 个方向 (x, y, z) 上移动物体了，它是变换工具箱中非常有用的一员。
 
 ### 旋转
 
-**一句话核心：** 旋转矩阵用角度和旋转轴描述转动；OpenGL 相关 API 一律使用**弧度制**角度，所以代码里常见 `glm::radians(...)` 转换。
+**一句话核心：** 旋转矩阵用角度和旋转轴描述转动；GLM 与 GLSL 的角度参数一律使用**弧度制**，所以代码里常见 `glm::radians(...)` 转换。
 
 2D/3D 中的旋转用**角**（Angle）表示，可以是角度制或弧度制：周角是 360° 或 \(2\pi\) 弧度。转半圈是 180°，向右转 1/5 圈是 72°。下图中的 2D 向量 \(\color{red}{\bar{v}}\) 由 \(\color{green}{\bar{k}}\) 向右旋转 72° 得到：
 
@@ -255,7 +261,7 @@ $$
 >
 > `PI` 约等于 3.14159265359。GLM 的 `glm::radians(degrees)` 正是完成角度转弧度的工具。
 
-在 3D 空间中旋转需要定义一个角**和**一个**旋转轴**（Rotation Axis）。旋转矩阵在 3D 空间中沿每个单位轴有不同的定义，旋转角度用 \(\theta\) 表示。沿 x 轴旋转：
+旋转矩阵在 3D 空间中沿每个单位轴有不同的定义，旋转角度用 \(\theta\) 表示。沿 x 轴旋转：
 
 $$
 \begin{bmatrix} \color{red}1 & \color{red}0 & \color{red}0 & \color{red}0 \\ \color{green}0 & \color{green}{\cos \theta} & - \color{green}{\sin \theta} & \color{green}0 \\ \color{blue}0 & \color{blue}{\sin \theta} & \color{blue}{\cos \theta} & \color{blue}0 \\ \color{purple}0 & \color{purple}0 & \color{purple}0 & \color{purple}1 \end{bmatrix} \cdot \begin{pmatrix} x \\ y \\ z \\ 1 \end{pmatrix} = \begin{pmatrix} x \\ \color{green}{\cos \theta} \cdot y - \color{green}{\sin \theta} \cdot z \\ \color{blue}{\sin \theta} \cdot y + \color{blue}{\cos \theta} \cdot z \\ 1 \end{pmatrix}
@@ -273,7 +279,7 @@ $$
 \begin{bmatrix} \color{red}{\cos \theta} & - \color{red}{\sin \theta} & \color{red}0 & \color{red}0 \\ \color{green}{\sin \theta} & \color{green}{\cos \theta} & \color{green}0 & \color{green}0 \\ \color{blue}0 & \color{blue}0 & \color{blue}1 & \color{blue}0 \\ \color{purple}0 & \color{purple}0 & \color{purple}0 & \color{purple}1 \end{bmatrix} \cdot \begin{pmatrix} x \\ y \\ z \\ 1 \end{pmatrix} = \begin{pmatrix} \color{red}{\cos \theta} \cdot x - \color{red}{\sin \theta} \cdot y \\ \color{green}{\sin \theta} \cdot x + \color{green}{\cos \theta} \cdot y \\ z \\ 1 \end{pmatrix}
 $$
 
-利用旋转矩阵可以把任意位置向量沿一个单位旋转轴旋转，也可以复合多个矩阵（例如先沿 x 轴旋转再沿 y 轴旋转）。但复合旋转很快会带来一个问题——**万向节死锁**（Gimbal Lock）。更稳妥的模型是沿任意轴（例如单位向量 \((0.662, 0.2, 0.7222)\)）一次性旋转，对应的旋转矩阵如下（\((\color{red}{R_x}, \color{green}{R_y}, \color{blue}{R_z})\) 代表任意旋转轴）：
+利用旋转矩阵可以把任意位置向量沿一个单位旋转轴旋转，也可以复合多个矩阵（例如先沿 x 轴旋转再沿 y 轴旋转）。但复合旋转很快会带来一个问题——**万向节死锁**（Gimbal Lock）。更稳妥的模型是沿任意轴（例如单位向量 \((0.662, 0.2, 0.722)\)）一次性旋转，对应的旋转矩阵如下（\((\color{red}{R_x}, \color{green}{R_y}, \color{blue}{R_z})\) 代表任意旋转轴）：
 
 $$
 \begin{bmatrix} \cos \theta + \color{red}{R_x}^2(1 - \cos \theta) & \color{red}{R_x}\color{green}{R_y}(1 - \cos \theta) - \color{blue}{R_z} \sin \theta & \color{red}{R_x}\color{blue}{R_z}(1 - \cos \theta) + \color{green}{R_y} \sin \theta & 0 \\ \color{green}{R_y}\color{red}{R_x} (1 - \cos \theta) + \color{blue}{R_z} \sin \theta & \cos \theta + \color{green}{R_y}^2(1 - \cos \theta) & \color{green}{R_y}\color{blue}{R_z}(1 - \cos \theta) - \color{red}{R_x} \sin \theta & 0 \\ \color{blue}{R_z}\color{red}{R_x}(1 - \cos \theta) - \color{green}{R_y} \sin \theta & \color{blue}{R_z}\color{green}{R_y}(1 - \cos \theta) + \color{red}{R_x} \sin \theta & \cos \theta + \color{blue}{R_z}^2(1 - \cos \theta) & 0 \\ 0 & 0 & 0 & 1 \end{bmatrix}
@@ -312,6 +318,12 @@ flowchart LR
 
 > **常见误解：** 代码里先写 `glm::translate` 就是先位移。
 > **纠正：** GLM 的每个变换函数都把「新矩阵 × 传入矩阵」的结果赋回，因此矩阵乘法从右向左生效——写在**最下面**的变换最先应用。本仓库示例中代码依次是 translate → rotate → scale，实际作用顺序却是 scale → rotate → translate（旋转发生在物体局部坐标系内，位移用世界坐标移动整个物体）。
+
+> **进阶（变换顺序与父子层次）：** 「先缩放、再旋转、最后位移」只是单个物体的规则；物体之间存在父子关系时，变换会一层层套起来：
+>
+> - 子物体的世界变换 = 父变换 × 子物体自身变换：`M_child_world = M_parent_world * M_child_local`。父物体转动时，子物体跟着转——这正是场景图（Scene Graph）的核心思想。
+> - 示例：想让物体绕场景中心公转同时自转，需要 `T(中心) × R(公转) × T(半径偏移) × R(自转) × S(缩放)` 的链式组合；写错层次顺序，公转就会退化成自转或漂移。
+> - 本仓库示例没有父子层次，但 08 节里 10 个立方体各自携带独立的 model 矩阵，已经是「每物体一个矩阵」的雏形——把其中几个矩阵再左乘一个父矩阵，就是最简单的场景图。
 
 # 实践
 
@@ -394,7 +406,7 @@ void main()
 
 - `glm::mat4 transform{1.0F};` —— 从单位矩阵出发（0.9.9+ 必须显式初始化）。
 - `glm::translate(transform, glm::vec3{0.35F, -0.20F, 0.0F})` —— 把矩形向右下角移动：x 方向 +0.35，y 方向 −0.20（NDC 中 y 向上为正）。
-- `glm::rotate(transform, static_cast<float>(glfwGetTime()), glm::vec3{0.0F, 0.0F, 1.0F})` —— 绕 z 轴旋转，角度取当前时间（秒）。`glfwGetTime()` 返回程序启动以来的秒数，随时间单调增长，于是旋转角度每帧增大，形成持续旋转的动画。注意 GLM 需要弧度制，这里 `glfwGetTime()` 本身就是弧度值。
+- `glm::rotate(transform, static_cast<float>(glfwGetTime()), glm::vec3{0.0F, 0.0F, 1.0F})` —— 绕 z 轴旋转，角度取当前时间（秒）。`glfwGetTime()` 返回程序启动以来的秒数，随时间单调增长，于是旋转角度每帧增大，形成持续旋转的动画。注意 GLM 需要弧度制，这里直接把 `glfwGetTime()` 返回的秒数当作弧度值使用。
 - `glm::scale(transform, glm::vec3{0.75F, 0.75F, 1.0F})` —— 长宽缩放到原来的 0.75 倍，z 方向不变（矩形是 2D 的）。
 - `glUniformMatrix4fv(transform_uniform, 1, GL_FALSE, glm::value_ptr(transform))` —— 参数依次是 uniform 位置、矩阵个数（1）、是否转置（`GL_FALSE`，因为 GLM 默认**列主序**布局，与 OpenGL 一致，无需转置）、矩阵数据指针（`glm::value_ptr` 负责把 GLM 矩阵转换为 float 数组）。
 
@@ -428,7 +440,7 @@ flowchart LR
 
 **一句话核心：** 动画 = 每帧用新参数重新生成变换矩阵；这是「CPU 算、GPU 用」数据流的必然结果——矩阵是**每帧的输入**，顶点数据是**不变的资产**。
 
-上一节的示例把变换矩阵放在初始化阶段声明一次就够了，而本节必须在渲染循环的每次迭代中重新创建它，因为旋转角度取自 `glfwGetTime()`、每帧都在变化：
+如果变换是静态的（不随时间变化），在初始化阶段声明一次就够了；而本节必须在渲染循环的每次迭代中重新创建它，因为旋转角度取自 `glfwGetTime()`、每帧都在变化：
 
 ```mermaid
 flowchart LR
