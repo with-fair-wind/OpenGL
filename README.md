@@ -35,7 +35,10 @@ Conan 当前管理这些库：
 |   `-- 02_lighting/
 |       |-- 01_colors/
 |       |-- 02_basic_lighting/
-|       `-- 03_materials/
+|       |-- 03_materials/
+|       |-- 04_lighting_maps/
+|       |-- 05_light_casters/
+|       `-- 06_multiple_lights/
 |-- assets/                  # shader、纹理、模型等资源
 |   `-- textures/
 |-- cmake/                   # 项目级 CMake helper
@@ -75,5 +78,8 @@ third_party/                 # 仅放无法通过 Conan 管理的极少数依赖
 1. 颜色：`apps/02_lighting/01_colors/`
 2. 基础光照：`apps/02_lighting/02_basic_lighting/`
 3. 材质：`apps/02_lighting/03_materials/`
+4. 光照贴图：`apps/02_lighting/04_lighting_maps/`
+5. 投光物：`apps/02_lighting/05_light_casters/`
+6. 多光源：`apps/02_lighting/06_multiple_lights/`
 
 每个示例先保持独立可运行；当重复代码变多时，再把窗口、Shader、纹理、相机等内容提取到 `src/opengl_lab/` 中。
