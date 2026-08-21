@@ -78,3 +78,15 @@ cmake --build --preset mingw-gcc-debug
 - **测试框架尚未配置**：无 `tests/` 目录、无 CTest 接入（无 `enable_testing`/`add_test`/`testPresets`）、无测试依赖。当前冒烟检查 = configure + build 成功。
 - **约定**（新增可复用代码时启用）：在 `tests/` 下添加 `test_<feature>.cpp`，接入 CTest，用 `ctest --test-dir build/<preset>` 运行。
 - `.gitignore` 已预留 `Testing/`、`.cache/` 忽略项。
+
+## 教程文档规范（docs/ 分章教程）
+
+`docs/01_getting_started/` 是 Getting Started 章节中文教程（基于 LearnOpenGL-CN 整理修订）；后续章节（02_lighting 等）沿用同一契约：
+
+- **命名**：`docs/<章节>/<NN>_<slug>.md`（snake_case，与 `apps/` 目录一致）；每章一个索引 `README.md`；图片放 `docs/img/<章节>/<NN>/`，文中用相对路径 `![](../img/<章节>/<NN>/xxx.png)`。
+- **结构**：H1 中文标题 → 元数据表（原文/作者/来源，示例篇加"本仓库示例"行）→ 正文 → `## 本仓库示例`（示例路径 + 构建/运行命令，仅示例篇）→ `## 本章整体回顾` → 底部"下一节"链接（链式串联；末篇指向下一章节，章节未写时用纯文本指引而非断链）。
+- **格式**：纯 GitHub Markdown，禁止 mkdocs 语法。转换规则：`!!! X` → `> **X：**`；`<fun>x</fun>`/`<var>x</var>` → `` `x` ``；`<def>术语</def>` → `**术语**`；LaTeX `$...$` 保留（GitHub 原生渲染）。
+- **代码**：有示例对应的篇目，代码片段必须**逐字取自** `apps/` 下对应 `main.cpp`（C++23 风格：snake_case、nullptr、花括号初始化、`F`/`U` 后缀）；概念篇可保留通用教学代码但需现代化（nullptr、返回值检查等）。
+- **修正与完善**：以 LearnOpenGL-CN 为底本时修正术语与病句；每篇融入"局部→整体"讲解——一句话核心（关键概念先给加粗核心句）、职责边界（OpenGL 规范 / GLFW / 显卡驱动 / 应用各自负责什么）、分层解释（规范→驱动→运行时加载；状态设置 vs 状态使用）、mermaid/ASCII 全景链路图、`> **常见误解：**` 块。
+- **术语统一**：Esc = 退出键（非返回键）；"链接器"（非连接器）；渲染/呈现统一用"渲染"；OpenGL 上下文（非"环境"）。
+- **交付验证**：无 mkdocs 残留语法、全部图片引用可解析、代码块与 main.cpp 一致、每篇含 ≥1 全景图与 `## 本章整体回顾`、"下一节"链接链完整。
