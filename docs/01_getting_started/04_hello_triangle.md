@@ -403,7 +403,7 @@ glBindBuffer(GL_ARRAY_BUFFER, 0);
 glBindVertexArray(0);
 ```
 
-注意顺序：先绑定 VAO，再绑定 VBO 并上传数据，然后配置属性指针并启用，最后把 `GL_ARRAY_BUFFER` 和 VAO 都解绑（`glBindBuffer(GL_ARRAY_BUFFER, 0)`、`glBindVertexArray(0)`）。所有顶点属性配置都已记录在 VAO 中，之后的绘制循环只需要重新绑定 VAO 即可。
+上面展示的是一段完整初始化，其中真正硬性的顺序约束只有一条：`glVertexAttribPointer` 必须在「VAO 已绑定、且目标 VBO 已绑定到 `GL_ARRAY_BUFFER`」时调用——只有那一刻的状态会被记录进 VAO。`glBufferData` 上传数据只依赖 `GL_ARRAY_BUFFER` 上的绑定、与 VAO 无关，把它放在绑 VAO 之前或之后都可以（`GL_ARRAY_BUFFER` 的绑定本身也不会被记进 VAO）；把 `glBindVertexArray(vertex_array_object)` 挪到 `glBufferData` 之后、`glVertexAttribPointer` 之前，结果完全相同。末尾的 `glBindBuffer(GL_ARRAY_BUFFER, 0)` 和 `glBindVertexArray(0)` 是解绑清理，非必需；所有顶点属性配置都已记录在 VAO 中，之后的绘制循环只需要重新绑定 VAO 即可。
 
 > **进阶（VAO 到底保存了什么）：** **VAO 保存的是「顶点属性指针状态」的完整快照，而不是顶点数据本身**：
 >
