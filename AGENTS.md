@@ -21,6 +21,7 @@ OpenGL Lab 是一个基于 C++23、CMake ≥ 3.28 和 Conan 2 的 LearnOpenGL（
 - `cmake/` — `OpenGLLabOptions.cmake`：公共选项、C++23 标准、警告标志、clangd compile_commands 镜像目标。
 - `conan/` — `conanfile.py` 在仓库根（不在 conan/ 下）；`conan/profiles/` 存 7 个 Conan profile（mingw-gcc、mingw-clang、msvc-ninja、msvc-ninja-multi、clang-cl、clang-cl-ninja-multi、msvc-vs2026）。
 - `assets/textures/` — 3 个 PPM 纹理：`checker.ppm`、`container_diffuse.ppm`、`container_specular.ppm`；`assets/models/` — 手写 OBJ/MTL 模型：`crate/`（单 mesh 立方体 + 木箱贴图，供 01_assimp）、`stage/`（地面/箱子/八面体 3 mesh 3 材质，供 03_model；八面体故意无贴图演示回退路径）。
+- `docs/<章节>/` — 分章中文教程（`01_getting_started`、`02_lighting`、`03_model_loading`），每章 README 索引 + 篇章 md；`docs/img/<NN>/<篇>/` 存章节图片（含本仓库示例截图）。
 - `docs/build.md` — 权威构建参考：完整 preset 矩阵、逐工具链命令、多配置生成器说明、运行时行为（Esc/WASD/鼠标/滚轮 FOV）。
 - `src/`、`tests/`、`include/` 当前不存在（README 规划中，勿假设存在）。
 
@@ -82,7 +83,7 @@ cmake --build --preset mingw-gcc-debug
 
 ## 教程文档规范（docs/ 分章教程）
 
-`docs/01_getting_started/` 是 Getting Started 章节中文教程（基于 LearnOpenGL-CN 整理修订）；后续章节（02_lighting 等）沿用同一契约：
+`docs/01_getting_started/`、`docs/02_lighting/`、`docs/03_model_loading/` 是已完成的分章中文教程（基于 LearnOpenGL-CN 整理修订）；后续章节（04_advanced_opengl 等）沿用同一契约：
 
 - **命名**：`docs/<章节>/<NN>_<slug>.md`（snake_case，与 `apps/` 目录一致）；每章一个索引 `README.md`；图片放 `docs/img/<章节>/<NN>/`，文中用相对路径 `![](../img/<章节>/<NN>/xxx.png)`。
 - **结构**：H1 中文标题 → 元数据表（原文/作者/来源，示例篇加"本仓库示例"行）→ 正文 → `## 本仓库示例`（示例路径 + 构建/运行命令，仅示例篇）→ `## 本章整体回顾` → 底部"下一节"链接（链式串联；末篇指向下一章节，章节未写时用纯文本指引而非断链）。
