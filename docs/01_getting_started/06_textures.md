@@ -35,15 +35,15 @@
 
 ![](../img/01/06/tex_coords.png)
 
-我们为三角形指定了 3 个纹理坐标：左下角顶点对应图片左下角 (0, 0)，右下角顶点对应 (1, 0)，顶部顶点对应图片上边中点 (0.5, 1.0)。顶点着色器接收这三个纹理坐标并传给片段着色器，GPU 为每个片段插值出对应的纹理坐标，再据此采样：
+我们为三角形指定了 3 个纹理坐标，让整张图片恰好覆盖三角形：
 
-```c++
-float texCoords[] = {
-    0.0f, 0.0f, // 左下角
-    1.0f, 0.0f, // 右下角
-    0.5f, 1.0f  // 上中
-};
-```
+| 三角形顶点 | 纹理坐标 | 对应图片位置 |
+| --- | --- | --- |
+| 左下角 | `(0.0, 0.0)` | 左下角 |
+| 右下角 | `(1.0, 0.0)` | 右下角 |
+| 顶部 | `(0.5, 1.0)` | 上边中点 |
+
+顶点着色器接收这三个纹理坐标并传给片段着色器，GPU 为每个片段插值出对应的纹理坐标，再据此采样。
 
 > **职责边界：** 「采样」发生在 GPU 上、由片段着色器中的 `texture()` 函数触发，但它到底怎么取颜色，取决于纹理对象上的参数（环绕方式、过滤方式）——这些参数由我们在 CPU 侧通过 `glTexParameter*` 设置。一句话：**CPU 设置纹理参数（状态设置），GPU 采样时使用这些参数（状态使用）**。这也是 OpenGL「状态机」模型的又一次体现。
 
@@ -78,21 +78,17 @@ flowchart LR
 
 ![](../img/01/06/texture_wrapping.png)
 
-每个选项都可以用 `glTexParameter*` 函数按坐标轴单独设置（`s`、`t` 分别对应 2D 纹理的 x、y 轴；3D 纹理还有 `r` 轴）：
+每个选项都可以用 `glTexParameter*` 函数按坐标轴单独设置（`s`、`t` 分别对应 2D 纹理的 x、y 轴；3D 纹理还有 `r` 轴）。仓库示例实际设置的环绕方式（逐字取自 `create_texture()`）：
 
 ```c++
-glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+    // OpenGL: wrap 参数决定纹理坐标超出 0..1 时如何取样。
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 ```
 
-第一个参数是纹理目标（Target），2D 纹理用 `GL_TEXTURE_2D`；第二个参数指定要配置的选项和坐标轴，这里是 `WRAP`（环绕）选项的 `S`、`T` 轴；第三个参数是环绕方式本身。这个调用修改的是**当前绑定**到 `GL_TEXTURE_2D` 目标的纹理对象——所以 `glTexParameter*` 必须出现在 `glBindTexture` 之后。
+第一个参数是纹理目标（Target），2D 纹理用 `GL_TEXTURE_2D`；第二个参数指定要配置的选项和坐标轴，这里是 `WRAP`（环绕）选项的 `S`、`T` 轴；第三个参数是环绕方式本身——想换成镜像重复，把 `GL_REPEAT` 换成 `GL_MIRRORED_REPEAT` 即可。这个调用修改的是**当前绑定**到 `GL_TEXTURE_2D` 目标的纹理对象——所以 `glTexParameter*` 必须出现在 `glBindTexture` 之后。
 
-如果选 `GL_CLAMP_TO_BORDER`，还需要指定边缘颜色。这要用 `glTexParameterfv` 的 `fv` 后缀形式（`f` 表示 float、`v` 表示数组），配合 `GL_TEXTURE_BORDER_COLOR` 选项：
-
-```c++
-float borderColor[] = { 1.0f, 1.0f, 0.0f, 1.0f };
-glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-```
+如果选 `GL_CLAMP_TO_BORDER`，还需要指定边缘颜色：用 `glTexParameterfv` 的 `fv` 后缀形式（`f` 表示 float、`v` 表示数组），配合 `GL_TEXTURE_BORDER_COLOR` 选项传入一个 4 分量浮点颜色（例如白色边缘 `{1.0F, 1.0F, 1.0F, 1.0F}`）。
 
 > **常见误解：** 有人以为环绕方式会「自动裁剪」顶点或坐标。
 > **纠正：** 环绕方式只影响采样阶段对**越界纹理坐标**的处理，不影响几何，也不影响顶点着色器。另外要注意：本节仓库示例的纹理坐标恰好全部落在 0~1 内，`GL_REPEAT` 不会产生可见效果——要真正看到环绕方式的差异，需要像「练习」里那样把坐标扩展到 0~2 甚至更大。
@@ -117,11 +113,12 @@ glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
 `GL_NEAREST` 产生颗粒状图案，能清晰看到组成纹理的单个像素；`GL_LINEAR` 产生更平滑的图案，很难看出单个纹理像素。`GL_LINEAR` 输出更真实，但有些开发者追求 8-bit 像素风格，会特意选用 `GL_NEAREST`。
 
-放大（Magnify）和缩小（Minify）时都可以分别设置过滤方式，例如缩小时用邻近过滤、放大时用线性过滤，还是通过 `glTexParameter*` 设置：
+放大（Magnify）和缩小（Minify）时都可以分别设置过滤方式——例如缩小时用邻近过滤、放大时用线性过滤。设置同样通过 `glTexParameter*` 完成，仓库示例实际的两行设置（逐字取自 `create_texture()`；`GL_LINEAR_MIPMAP_LINEAR` 的含义见下文「多级渐远纹理」）：
 
 ```c++
-glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // OpenGL: filter 参数决定纹理放大/缩小时如何从相邻像素插值。
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 ```
 
 ### 多级渐远纹理
@@ -145,10 +142,7 @@ OpenGL 用**多级渐远纹理**（Mipmap）解决这个问题：一系列纹理
 | `GL_NEAREST_MIPMAP_LINEAR` | 在两个最匹配的 mipmap 级别间线性插值，用邻近过滤采样 |
 | `GL_LINEAR_MIPMAP_LINEAR` | 在两个邻近的 mipmap 级别间线性插值，并用线性过滤采样 |
 
-```c++
-glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-```
+仓库示例的 `GL_TEXTURE_MIN_FILTER` 用的就是表中质量最好的 `GL_LINEAR_MIPMAP_LINEAR`（级别间插值 + 级内线性过滤），放大过滤保持 `GL_LINEAR`——即上一小节引用的那两行 `glTexParameter*`。
 
 > **常见误解：** 把放大过滤也设成 mipmap 选项。
 > **纠正：** 这是经典错误——mipmap 只在纹理被**缩小**时使用，放大时根本不会用到。把 `GL_TEXTURE_MAG_FILTER` 设为 `GL_LINEAR_MIPMAP_LINEAR` 等选项不但没有效果，还会产生 `GL_INVALID_ENUM` 错误。本节仓库示例的做法是：min filter 用 `GL_LINEAR_MIPMAP_LINEAR`（缩小 + 级别间插值，质量最好），mag filter 用 `GL_LINEAR`（放大时线性过滤）。
@@ -174,28 +168,29 @@ glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 **一句话核心：** `stb_image.h` 是 Sean Barrett 写的单头文件图像加载库，支持大多数流行格式；只需在一个 `.cpp` 里定义 `STB_IMAGE_IMPLEMENTATION`，头文件就会展开出完整的实现代码。
 
-`stb_image.h` 是 [Sean Barrett](https://github.com/nothings) 编写的非常流行的单头文件图像加载库，能加载大多数流行格式，整合到工程中也非常简单。把 `stb_image.h` 下载下来、以同名加入工程，再新建一个 C++ 文件写入：
-
-```c++
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-```
-
-通过定义 `STB_IMAGE_IMPLEMENTATION`，预处理器会修改头文件，使其只包含相关的函数定义源码——相当于把这个头文件变成了一份 `.cpp`。之后在程序中包含 `stb_image.h` 即可正常调用。本仓库示例在 `main.cpp` 顶部同样如此（`stb::stb` 由 Conan 提供，include 顺序遵循仓库约定）：
+`stb_image.h` 是 [Sean Barrett](https://github.com/nothings) 编写的非常流行的单头文件图像加载库，能加载大多数流行格式，整合到工程中也非常简单：只需在一个 `.cpp` 文件里定义 `STB_IMAGE_IMPLEMENTATION` 再包含头文件，预处理器就会修改头文件、使其展开出完整的函数定义——相当于把这个头文件变成了一份 `.cpp`。本仓库示例在 `main.cpp` 顶部正是这样做的（`stb::stb` 由 Conan 提供，include 顺序遵循仓库约定，逐字取自示例）：
 
 ```c++
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 ```
 
-用 `stb_image.h` 加载图片，调用它的 `stbi_load` 函数（下面以原教程的[木箱](../img/01/06/container.jpg)图片为例）：
+用 `stb_image.h` 加载图片，调用它的 `stbi_load` 函数。仓库示例 `create_texture()` 中的调用（逐字取自示例 `main.cpp`）：
 
 ```c++
-int width, height, nrChannels;
-unsigned char *data = stbi_load("container.jpg", &width, &height, &nrChannels, 0);
+    int width{0};
+    int height{0};
+    int channel_count{0};
+
+    // stb_image: OpenGL 纹理坐标原点通常按左下角理解，图片文件常按左上角存储。
+    // 翻转 Y 轴后，纹理坐标 (0, 0) 会更符合 OpenGL 入门教程的图示。
+    stbi_set_flip_vertically_on_load(1);
+    stbi_image_ptr image_data{
+        stbi_load(path.c_str(), &width, &height, &channel_count, 0),
+    };
 ```
 
-第一个参数是图片文件路径；第二、三、四个参数是三个 `int` 指针，`stb_image` 会把图像的**宽度**、**高度**和**颜色通道个数**填进去——之后生成纹理时需要用到宽度和高度。
+第一个参数是图片文件路径；第二、三、四个参数是三个 `int` 指针，`stbi_load` 会把图像的**宽度**、**高度**和**颜色通道个数**（仓库命名为 `channel_count`）填进去——之后生成纹理时需要用到宽度和高度。原文以[木箱](../img/01/06/container.jpg)图片为例；仓库示例加载的是 `assets/textures/checker.ppm`（棋盘格）。
 
 > **分层解释：** 加载流程是「文件 → 解码 → 内存字节 → GPU」：`stbi_load` 把磁盘上的图片文件解码成一段紧凑的像素字节流（每像素若干字节），`glTexImage2D` 再把这段字节上传到显存。图像解码完全在 CPU 上完成，GPU 拿到的是「裸像素」。这正是「规范 → 驱动 → 运行时」分层的一个侧面：OpenGL 规范不关心图片格式，只规定「给我字节和格式描述，我来存储」。
 
@@ -203,43 +198,50 @@ unsigned char *data = stbi_load("container.jpg", &width, &height, &nrChannels, 0
 
 **一句话核心：** 纹理和 VBO、VAO 一样是 OpenGL 对象，以 ID 引用，生命周期固定：`glGenTextures` 创建 → `glBindTexture` 绑定 → `glTexParameter*` 配置参数 → `glTexImage2D` 上传像素 → `glGenerateMipmap` 生成多级渐远纹理。
 
-和之前的 OpenGL 对象一样，纹理也是用 ID 引用的：
+和之前的 OpenGL 对象一样，纹理也是用 ID 引用的（`GLuint` 即无符号整型句柄）。仓库示例的写法（逐字取自 `create_texture()`）：
 
 ```c++
-unsigned int texture;
-glGenTextures(1, &texture);
+    GLuint texture{0};
+    glGenTextures(1, &texture);
+
+    // OpenGL: 纹理对象的参数和像素数据都写入当前绑定到 GL_TEXTURE_2D 的对象。
+    glBindTexture(GL_TEXTURE_2D, texture);
 ```
 
-`glGenTextures` 第一个参数是生成的纹理数量，第二个参数是存放 ID 的 `unsigned int` 数组（这里只有一个）。和其他对象一样，必须**绑定**之后，后续纹理指令才会作用于当前绑定的纹理：
+`glGenTextures` 第一个参数是生成的纹理数量，第二个参数是存放 ID 的变量地址。和其他对象一样，必须**绑定**之后，后续纹理指令才会作用于当前绑定的纹理。
+
+现在可以上传图片数据生成纹理了，核心调用是 `glTexImage2D`，随后跟一次 `glGenerateMipmap`（逐字取自 `create_texture()`）：
 
 ```c++
-glBindTexture(GL_TEXTURE_2D, texture);
-```
+    // OpenGL: glTexImage2D 把 CPU 内存中的像素上传到 GPU 纹理存储。
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        static_cast<GLint>(format),
+        width,
+        height,
+        0,
+        format,
+        GL_UNSIGNED_BYTE,
+        image_data.get());
 
-现在可以上传图片数据生成纹理了，核心调用是 `glTexImage2D`：
-
-```c++
-glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-glGenerateMipmap(GL_TEXTURE_2D);
+    // OpenGL: mipmap 是一组逐级缩小的纹理图，远处采样更稳定，也匹配上面的 min filter。
+    glGenerateMipmap(GL_TEXTURE_2D);
 ```
 
 函数很长，逐个参数讲解：
 
 - 第一个参数：纹理目标（Target）。`GL_TEXTURE_2D` 表示作用于当前绑定到该目标的纹理对象（绑定在 `GL_TEXTURE_1D`/`GL_TEXTURE_3D` 的纹理不受影响）。
 - 第二个参数：mipmap 级别。手动逐级设置时使用，这里填 0，即基本级别（Base-level）。
-- 第三个参数：告诉 OpenGL 希望把纹理存储为**内部格式**。图像只有 RGB 值，所以存为 `GL_RGB`。
+- 第三个参数：告诉 OpenGL 希望把纹理存储为**内部格式**。仓库示例传入变量 `format`——按图片通道数在 `GL_RED`/`GL_RGB`/`GL_RGBA` 中选择的普通三/四分量格式。
 - 第四、五个参数：最终纹理的宽度和高度，来自加载图片时得到的变量。
 - 第六个参数：历史遗留，应始终为 0。
-- 第七、八个参数：**源图**的格式和数据类型。源图是 RGB、以字节（unsigned byte）存储，对应传入 `GL_RGB`、`GL_UNSIGNED_BYTE`。
-- 最后一个参数：真正的图像数据。
+- 第七、八个参数：**源图**的格式和数据类型。源图按 `format` 描述的通道排布、以字节（unsigned byte）存储，对应传入 `format`、`GL_UNSIGNED_BYTE`。
+- 最后一个参数：真正的图像数据（`image_data.get()` 取出 RAII 指针托管的裸指针）。
 
 调用 `glTexImage2D` 时，当前绑定的纹理对象被附加上纹理图像。不过此时只加载了基本级别；要使用 mipmap，要么手动逐级上传（不断递增第二个参数），要么直接调用 `glGenerateMipmap`，让 OpenGL 为当前绑定的纹理自动生成全部级别。
 
-上传完成后，释放图像内存是个好习惯——`stbi_load` 分配的内存必须由 `stbi_image_free` 释放：
-
-```c++
-stbi_image_free(data);
-```
+上传完成后，释放图像内存是个好习惯——`stbi_load` 分配的内存必须由 `stbi_image_free` 释放。仓库示例把这一步包进 RAII 删除器（见下文 `stbi_image_deleter`），早返回的错误路径也不会泄漏。
 
 > **分层解释：** 这里能看到一条清晰的「设置 vs 使用」分界线：`glGenTextures`/`glBindTexture`/`glTexParameter*`/`glTexImage2D`/`glGenerateMipmap` 都是**状态设置**（描述「纹理长什么样、怎么采样」），直到绘制时片段着色器里的 `texture()` 才是**状态使用**（真正读取图片）。纹理对象本身是 GPU 资源，由驱动管理，我们手里只有它的 ID。
 
@@ -349,33 +351,33 @@ GLuint create_texture() {
 本节仓库示例用 `glDrawElements` 绘制一个矩形（EBO 在「你好，三角形」一节介绍过）。要让 OpenGL 知道如何采样纹理，必须先更新顶点数据、加入纹理坐标。仓库示例的顶点数据是「位置（3 float）+ 纹理坐标（2 float）」共 5 个 float 一组（原教程还额外带颜色，仓库示例为了聚焦纹理而省略了颜色）：
 
 ```c++
-constexpr std::array<float, 20> vertices{
-    // 位置坐标             // 纹理坐标
-    0.5F, 0.5F, 0.0F, 1.0F, 1.0F,
-    0.5F, -0.5F, 0.0F, 1.0F, 0.0F,
-    -0.5F, -0.5F, 0.0F, 0.0F, 0.0F,
-    -0.5F, 0.5F, 0.0F, 0.0F, 1.0F,
-};
+    constexpr std::array<float, 20> vertices{
+        // 位置坐标             // 纹理坐标
+        0.5F, 0.5F, 0.0F, 1.0F, 1.0F,
+        0.5F, -0.5F, 0.0F, 1.0F, 0.0F,
+        -0.5F, -0.5F, 0.0F, 0.0F, 0.0F,
+        -0.5F, 0.5F, 0.0F, 0.0F, 1.0F,
+    };
 ```
 
-注意纹理坐标的取法：矩形的四个角分别对应图片的右上、右下、左下、左上，这样整张棋盘图正好覆盖矩形。由于新增了顶点属性，必须告诉 OpenGL 新的顶点格式：属性 0 是位置、属性 1 是纹理坐标，步长 `5 * sizeof(float)`，纹理坐标偏移 `3 * sizeof(float)`：
+注意纹理坐标的取法：矩形的四个角分别对应图片的右上、右下、左下、左上，这样整张棋盘图正好覆盖矩形。由于新增了顶点属性，必须告诉 OpenGL 新的顶点格式：属性 0 是位置、属性 1 是纹理坐标，步长 `5 * sizeof(float)`，纹理坐标偏移 `3 * sizeof(float)`（逐字取自示例 `main.cpp`）：
 
 ```c++
-constexpr GLsizei vertex_stride{5 * static_cast<GLsizei>(sizeof(float))};
-constexpr auto texture_coord_offset{3 * sizeof(float)};
+    constexpr GLsizei vertex_stride{5 * static_cast<GLsizei>(sizeof(float))};
+    constexpr auto texture_coord_offset{3 * sizeof(float)};
 
-glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vertex_stride, nullptr);
-glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vertex_stride, nullptr);
+    glEnableVertexAttribArray(0);
 
-// OpenGL: attribute 1 是 vec2 纹理坐标，它告诉片段着色器从图片的哪个位置采样。
-glVertexAttribPointer(
-    1,
-    2,
-    GL_FLOAT,
-    GL_FALSE,
-    vertex_stride,
-    reinterpret_cast<const void*>(texture_coord_offset));
-glEnableVertexAttribArray(1);
+    // OpenGL: attribute 1 是 vec2 纹理坐标，它告诉片段着色器从图片的哪个位置采样。
+    glVertexAttribPointer(
+        1,
+        2,
+        GL_FLOAT,
+        GL_FALSE,
+        vertex_stride,
+        reinterpret_cast<const void*>(texture_coord_offset));
+    glEnableVertexAttribArray(1);
 ```
 
 原教程的顶点格式是「位置 + 颜色 + 纹理坐标」8 个 float 一组，下图展示了这种更复杂的布局（步长 8 个 float、纹理坐标偏移 6 个 float）：
@@ -424,12 +426,12 @@ GLSL 内建的 `texture` 函数负责采样：第一个参数是纹理采样器�
 > **常见误解：** 有人以为 `sampler2D` uniform 存的是纹理对象 ID 或图片内容。
 > **纠正：** 采样器 uniform 存的是一个**纹理单元编号**（整数），真正的纹理对象绑定在对应的纹理单元上（见下一节）。这也是「明明声明了 uniform，却不用 `glUniform4f` 之类传颜色」的原因——传给采样器的是单元编号。
 
-绘制前把纹理绑定到当前激活的纹理单元，绘制命令就会自动使用它（原教程写法，纹理单元 0 默认激活）：
+绘制前把纹理绑定到当前激活的纹理单元，绘制命令就会自动使用它。仓库示例渲染循环中的绑定（逐字取自示例，纹理单元 0 默认激活；完整循环见下文「纹理单元」一节）：
 
 ```c++
-glBindTexture(GL_TEXTURE_2D, texture);
-glBindVertexArray(VAO);
-glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        // OpenGL: 激活 0 号纹理单元，再把本例 texture 绑定给这个单元。
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
 ```
 
 如果一切正确，你会看到下图（原教程使用木箱纹理；本仓库示例是棋盘格纹理）：
@@ -440,17 +442,11 @@ glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 >
 > 如果你的纹理全黑或全白，多半在某个环节出了错：检查着色器日志、顶点属性配置（步长/偏移）以及纹理加载路径。也可以继续跟完本节代码——有些驱动必须为每个采样器显式指定纹理单元（下一节的内容），否则采样结果就是黑的。
 
-原教程还演示了把纹理颜色与顶点颜色相乘混合：
-
-```c++
-FragColor = texture(ourTexture, TexCoord) * vec4(ourColor, 1.0);
-```
-
-效果是顶点颜色与纹理颜色的混合色：
+原教程还演示了把纹理颜色与顶点颜色相乘混合——片段着色器的输出写成 `frag_color = texture(texture1, tex_coord) * vec4(vertex_color, 1.0);`（`vec4` 分量逐项相乘，相当于给纹理「染色」）。效果是顶点颜色与纹理颜色的混合色：
 
 ![](../img/01/06/textures_funky.png)
 
-（原教程打趣说，这箱子喜欢跳 70 年代的迪斯科。）仓库示例省略了颜色属性，但理解这个乘法很容易：`vec4` 分量逐项相乘，相当于给纹理「染色」。
+（原教程打趣说，这箱子喜欢跳 70 年代的迪斯科。）仓库示例省略了颜色属性，这个一行改写留作练习——理解这个乘法很容易：它与「颜色」一节的物体颜色 × 光源颜色是同一个逐分量乘法。
 
 ## 纹理单元
 
@@ -458,11 +454,12 @@ FragColor = texture(ourTexture, TexCoord) * vec4(ourColor, 1.0);
 
 你可能会奇怪：`sampler2D` 明明是 uniform，我们却不用 `glUniform*` 给它传颜色值。用 `glUniform1i` 可以给纹理采样器分配一个位置值，从而在一个片段着色器里使用多个纹理。这个位置值通常称为**纹理单元**（Texture Unit）。纹理的默认单元是 0，它也是默认激活的单元——所以前面的例子不分配位置值也能工作。
 
-纹理单元的意义在于：**一次绘制可以使用多个纹理**。先把采样器与单元对应起来，再把纹理绑定到对应单元，绘制时每个采样器各取所需。`glBindTexture` 绑定的是「当前激活的纹理单元」：
+纹理单元的意义在于：**一次绘制可以使用多个纹理**。先把采样器与单元对应起来，再把纹理绑定到对应单元，绘制时每个采样器各取所需。`glBindTexture` 绑定的是「当前激活的纹理单元」（逐字取自示例渲染循环）：
 
 ```c++
-glActiveTexture(GL_TEXTURE0); // 在绑定纹理之前先激活纹理单元
-glBindTexture(GL_TEXTURE_2D, texture);
+        // OpenGL: 激活 0 号纹理单元，再把本例 texture 绑定给这个单元。
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
 ```
 
 激活单元之后，接下来的 `glBindTexture` 调用把纹理绑定到当前激活的单元。`GL_TEXTURE0` 默认总是被激活，所以只有一个纹理时可以不调用 `glActiveTexture`——但显式写出来更清晰，本仓库示例就选择了显式写法。
@@ -471,33 +468,35 @@ glBindTexture(GL_TEXTURE_2D, texture);
 >
 > OpenGL 至少保证 16 个纹理单元可用（`GL_TEXTURE0` 到 `GL_TEXTURE15`）。这些常量按顺序定义，因此可以用 `GL_TEXTURE0 + 8` 得到 `GL_TEXTURE8`，在需要循环处理多个纹理单元时很有用。
 
-仓库示例在初始化阶段（`glUseProgram` 之后）查询并缓存采样器位置，先检查是否为 `-1`（uniform 不存在），再用 `glUniform1i` 把 `texture1` 指向 0 号单元：
+仓库示例在初始化阶段（`glUseProgram` 之后）查询并缓存采样器位置，先检查是否为 `-1`（uniform 不存在，错误路径会清理全部资源后退出，见示例源码）：
 
 ```c++
-glUseProgram(shader_program);
-const GLint texture_uniform{glGetUniformLocation(shader_program, "texture1")};
-if (texture_uniform == -1) {
-    std::cerr << "Failed to find sampler uniform: texture1\n";
-    ...
-}
+    glUseProgram(shader_program);
+    const GLint texture_uniform{glGetUniformLocation(shader_program, "texture1")};
+    if (texture_uniform == -1) {
+        std::cerr << "Failed to find sampler uniform: texture1\n";
+```
 
-// OpenGL: sampler2D uniform 保存的是纹理单元编号，不是 texture object handle。
-glUniform1i(texture_uniform, 0);
+检查通过后，用 `glUniform1i` 把 `texture1` 指向 0 号单元（逐字取自示例）：
+
+```c++
+    // OpenGL: sampler2D uniform 保存的是纹理单元编号，不是 texture object handle。
+    glUniform1i(texture_uniform, 0);
 ```
 
 渲染循环里激活 0 号单元、绑定纹理，再照常绘制（注意：`glUniform1i` 只需设置一次，循环内每次重新绑定纹理是因为绑定状态会被后续操作覆盖，显式写出是教学上的稳妥做法）：
 
 ```c++
-// OpenGL: 激活 0 号纹理单元，再把本例 texture 绑定给这个单元。
-glActiveTexture(GL_TEXTURE0);
-glBindTexture(GL_TEXTURE_2D, texture);
+        // OpenGL: 激活 0 号纹理单元，再把本例 texture 绑定给这个单元。
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
 
-glUseProgram(shader_program);
-glBindVertexArray(vertex_array_object);
+        glUseProgram(shader_program);
+        glBindVertexArray(vertex_array_object);
 
-// OpenGL: 索引绘制会读取当前 VAO 记录的 GL_ELEMENT_ARRAY_BUFFER。
-glDrawElements(
-    GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, nullptr);
+        // OpenGL: 索引绘制会读取当前 VAO 记录的 GL_ELEMENT_ARRAY_BUFFER。
+        glDrawElements(
+            GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, nullptr);
 ```
 
 采样器与纹理单元的对应关系可以用一张全景图概括：
@@ -521,58 +520,27 @@ flowchart LR
 > - 纹理单元是「绑定槽位」，与纹理对象数量无关：同一张纹理可以绑到多个单元，多个采样器也可以指向同一个单元。
 > - 本示例只用 0 号单元，远低于任何硬件的上限；多纹理的真正用武之地在后面的「材质」章节（漫反射、镜面反射、法线贴图等）。
 
-原教程随后加载了第二张纹理（[你学习 OpenGL 时的表情](../img/01/06/awesomeface.png)，一张带 alpha 通道的 PNG），并在片段着色器里用 `mix` 函数混合两张图：
-
-```c++
-#version 330 core
-...
-
-uniform sampler2D texture1;
-uniform sampler2D texture2;
-
-void main()
-{
-    FragColor = mix(texture(texture1, TexCoord), texture(texture2, TexCoord), 0.2);
-}
-```
-
-GLSL 内建的 `mix` 函数对前两个参数按第三个参数做线性插值：`0.0` 完全取第一个输入，`1.0` 完全取第二个输入，`0.2` 表示 80% 的第一张图 + 20% 的第二张图。
+原教程随后加载了第二张纹理（[你学习 OpenGL 时的表情](../img/01/06/awesomeface.png)，一张带 alpha 通道的 PNG），并在片段着色器里用 GLSL 内建的 `mix` 函数混合两张图：`FragColor = mix(texture(texture1, TexCoord), texture(texture2, TexCoord), 0.2);`（原文写法）。`mix` 对前两个参数按第三个参数做线性插值：`0.0` 完全取第一个输入，`1.0` 完全取第二个输入，`0.2` 表示 80% 的第一张图 + 20% 的第二张图。
 
 > **注意：**
 >
 > 加载带 alpha 通道的 PNG 时，`glTexImage2D` 的格式参数必须用 `GL_RGBA` 而不是 `GL_RGB`，否则 OpenGL 无法正确解析像素数据。本仓库示例按 `stbi_load` 返回的通道数自动选择（见 `create_texture`），所以两种图片都能正确处理。
 
-两张纹理分别绑定到 0、1 号单元，两个采样器各指一个单元，绘制时同时生效：
+两张纹理分别绑定到 0、1 号单元——先 `glActiveTexture(GL_TEXTURE0)` 激活并绑定第一张，再 `glActiveTexture(GL_TEXTURE1)` 激活并绑定第二张，两个采样器各指一个单元，绘制时同时生效。本仓库在第二章「光照贴图」示例中实现了完全相同的双纹理绑定（`material.diffuse`/`material.specular` 各占一个单元），完整代码见[光照贴图](../02_lighting/04_lighting_maps.md)一文。
 
-```c++
-glActiveTexture(GL_TEXTURE0);
-glBindTexture(GL_TEXTURE_2D, texture1);
-glActiveTexture(GL_TEXTURE1);
-glBindTexture(GL_TEXTURE_2D, texture2);
-
-glBindVertexArray(VAO);
-glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-```
-
-还要用 `glUniform1i` 告诉 OpenGL 每个采样器属于哪个纹理单元，只需设置一次，放在渲染循环之前：
-
-```c++
-ourShader.use(); // 不要忘记在设置 uniform 之前激活着色器程序！
-glUniform1i(glGetUniformLocation(ourShader.ID, "texture1"), 0); // 手动设置
-ourShader.setInt("texture2", 1); // 或者使用着色器类封装
-```
+还要用 `glUniform1i` 告诉 OpenGL 每个采样器属于哪个纹理单元（`texture1` → 0、`texture2` → 1），只需设置一次，放在渲染循环之前——写法与本节上文 `texture1` 的设置完全相同（原文用着色器类封装的 `setInt`，只是对 `glUniform1i` + `glGetUniformLocation` 的包装）。
 
 结果：
 
 ![](../img/01/06/textures_combined.png)
 
-你可能注意到图片上下颠倒了！原因是 OpenGL 约定 y 轴 `0.0` 坐标在图片底部，而图片文件的 y 轴 `0.0` 坐标通常在顶部。幸运的是 `stb_image.h` 可以在加载时翻转 y 轴，只需在加载任何图像前调用一次：
+你可能注意到图片上下颠倒了！原因是 OpenGL 约定 y 轴 `0.0` 坐标在图片底部，而图片文件的 y 轴 `0.0` 坐标通常在顶部。幸运的是 `stb_image.h` 可以在加载时翻转 y 轴，只需在加载任何图像前调用一次（仓库示例在 `create_texture()` 里的写法，逐字取自示例 `main.cpp`）：
 
 ```c++
-stbi_set_flip_vertically_on_load(true);
+    stbi_set_flip_vertically_on_load(1);
 ```
 
-本仓库示例在 `create_texture()` 里就是这么做的（`stbi_set_flip_vertically_on_load(1)`），所以运行示例不会出现上下颠倒。翻转之后的效果：
+所以运行仓库示例不会出现上下颠倒。翻转之后的效果：
 
 ![](../img/01/06/textures_combined2.png)
 

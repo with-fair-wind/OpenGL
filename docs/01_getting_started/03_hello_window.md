@@ -44,17 +44,17 @@ graph TD
 
 ## 窗口常量与辅助函数
 
-接着，示例在匿名命名空间（`namespace { ... }`）里先声明三个窗口常量：
+接着，示例在匿名命名空间（`namespace { ... }`）里先声明三个窗口常量（源码中每个常量都附带中文 Doxygen 注释，这里以表格概括）：
 
 ```c++
 namespace {
-
-constexpr int window_width{800};
-
-constexpr int window_height{600};
-
-constexpr const char* window_title{"OpenGL Lab - Hello Window"};
 ```
+
+| 常量 | 值 | 含义 |
+| --- | --- | --- |
+| `window_width` | `800` | 窗口初始客户区宽度，单位为屏幕像素 |
+| `window_height` | `600` | 窗口初始客户区高度 |
+| `window_title` | `"OpenGL Lab - Hello Window"` | 窗口标题 |
 
 > 注意这里刻意把 `window_width`/`window_height` 定义为 `constexpr` 常量，并用花括号初始化（`{}`）——这是本仓库统一的 C++23 风格。这样做的原因有二：一是"魔法数字"有了名字，阅读代码的人一眼就知道 800 和 600 是窗口尺寸；二是后面 `glfwCreateWindow`、`glViewport` 以及 `glfwSetWindowShouldClose` 之外的多处调用都能复用这两个常量，改窗口大小时只需改一处。
 
@@ -66,14 +66,14 @@ void framebuffer_size_callback(GLFWwindow*, int width, int height) {
     // 这里从左下角 (0, 0) 开始，覆盖整个 GLFW 报告的帧缓冲。
     glViewport(0, 0, width, height);
 }
+```
 
+```c++
 void process_input(GLFWwindow* window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
     }
 }
-
-}  // namespace
 ```
 
 这两个函数的具体作用，我们分别在"视口"和"输入"小节详细解释。先记住它们在 `main` 之前定义、放在匿名命名空间里即可——匿名命名空间的符号只在当前翻译单元可见，这正好配合本仓库"每个示例自包含一个 `main.cpp`"的教学设计。
@@ -295,7 +295,12 @@ void process_input(GLFWwindow* window) {
 我们要把所有的渲染（Rendering）操作放到渲染循环中，因为我们想让这些渲染指令在每次渲染循环迭代的时候都能被执行。本示例还没有任何几何体，所以"渲染"退化为最基础的一步——清屏。为了测试一切都正常工作，我们使用一个自定义的颜色清空屏幕：
 
 ```c++
+        // OpenGL: glClearColor 只是在 OpenGL 状态机中设置“清屏颜色”，
+        // 并不会立即绘制；真正写入颜色缓冲的是下面的 glClear。
         glClearColor(0.10F, 0.14F, 0.18F, 1.0F);
+
+        // OpenGL: GL_COLOR_BUFFER_BIT 表示清空颜色缓冲，也就是当前帧要显示
+        // 到窗口中的颜色图像。这里会用 glClearColor 设置的颜色填满它。
         glClear(GL_COLOR_BUFFER_BIT);
 ```
 

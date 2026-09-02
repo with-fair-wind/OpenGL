@@ -122,7 +122,7 @@ constexpr std::array<float, 9> vertices{
 GLuint vertex_array_object{0};
 GLuint vertex_buffer_object{0};
 
-// OpenGL: VAO 记录"如何解释顶点缓冲"的状态，后续绘制只需重新绑定 VAO。
+// OpenGL: VAO 记录“如何解释顶点缓冲”的状态，后续绘制只需重新绑定 VAO。
 glGenVertexArrays(1, &vertex_array_object);
 
 // OpenGL: VBO 是 GPU 侧缓冲区，本例用它保存三角形的三个顶点坐标。
@@ -207,7 +207,7 @@ void main()
 
 ```c++
 GLuint compile_shader(GLenum shader_type, const char* source) {
-    // OpenGL: glCreateShader 只创建一个"着色器对象"句柄，还没有源码和机器码。
+    // OpenGL: glCreateShader 只创建一个“着色器对象”句柄，还没有源码和机器码。
     const GLuint shader{glCreateShader(shader_type)};
 
     // OpenGL: glShaderSource 把 CPU 侧字符串交给驱动；真正编译发生在 glCompileShader。
@@ -378,7 +378,10 @@ glEnableVertexAttribArray(0);
 GLuint vertex_array_object{0};
 GLuint vertex_buffer_object{0};
 
+// OpenGL: VAO 记录“如何解释顶点缓冲”的状态，后续绘制只需重新绑定 VAO。
 glGenVertexArrays(1, &vertex_array_object);
+
+// OpenGL: VBO 是 GPU 侧缓冲区，本例用它保存三角形的三个顶点坐标。
 glGenBuffers(1, &vertex_buffer_object);
 
 glBindVertexArray(vertex_array_object);
