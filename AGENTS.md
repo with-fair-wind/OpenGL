@@ -2,7 +2,7 @@
 
 ## 项目概述
 
-OpenGL Lab 是一个基于 C++23、CMake ≥ 3.28 和 Conan 2 的 LearnOpenGL（http://learnopengl.com）学习仓库，目标平台为 Windows。每个示例是独立可执行程序，按教程章节分组。当前进度：`01_getting_started`（7 个）与 `02_lighting`（6 个）共 13 个示例。无 CI、无测试框架（尚未配置）。
+OpenGL Lab 是一个基于 C++23、CMake ≥ 3.28 和 Conan 2 的 LearnOpenGL（http://learnopengl.com）学习仓库，目标平台为 Windows。每个示例是独立可执行程序，按教程章节分组。当前进度：`01_getting_started`（7 例 + 03_shaders 3 个练习目标）、`02_lighting`（6 例）与 `03_model_loading`（3 例）。无 CI、无测试框架（尚未配置）。
 
 ## 架构与数据流
 
@@ -16,10 +16,11 @@ OpenGL Lab 是一个基于 C++23、CMake ≥ 3.28 和 Conan 2 的 LearnOpenGL（
 ## 关键目录
 
 - `apps/01_getting_started/` — 入门章节 7 例：`01_hello_window`（无 OpenGL 对象）… `07_camera`（EBO/纹理/变换/坐标系/第一人称相机逐步引入）。
-- `apps/02_lighting/` — 光照章节 6 例：`01_colors` … `06_multiple_lights`（Phong 光照、材质/光源 struct uniform、光照贴图、点光源衰减、多光源数组 uniform）。
+- `apps/02_lighting/` — 光照章节 6 例：`01_colors` … `06_multiple_lights`（Phong 光照、材质/光源 struct uniform、光照贴图、点光源衰减、多光源数组 uniform）。`03_shaders` 下另有 `exercise1-3.cpp` 练习目标。
+- `apps/03_model_loading/` — 模型加载章节 3 例：`01_assimp`（导入 OBJ、打印 aiScene 统计、沿 aiNode 节点树递归渲染、法线可视化着色）、`02_mesh`（Vertex/Mesh 结构 + make/draw/destroy 函数封装）、`03_model`（Model 递归加载多 mesh/多材质，贴图相对模型目录解析，无贴图回退 1x1 纯色纹理）。
 - `cmake/` — `OpenGLLabOptions.cmake`：公共选项、C++23 标准、警告标志、clangd compile_commands 镜像目标。
 - `conan/` — `conanfile.py` 在仓库根（不在 conan/ 下）；`conan/profiles/` 存 7 个 Conan profile（mingw-gcc、mingw-clang、msvc-ninja、msvc-ninja-multi、clang-cl、clang-cl-ninja-multi、msvc-vs2026）。
-- `assets/textures/` — 3 个 PPM 纹理：`checker.ppm`、`container_diffuse.ppm`、`container_specular.ppm`。
+- `assets/textures/` — 3 个 PPM 纹理：`checker.ppm`、`container_diffuse.ppm`、`container_specular.ppm`；`assets/models/` — 手写 OBJ/MTL 模型：`crate/`（单 mesh 立方体 + 木箱贴图，供 01_assimp）、`stage/`（地面/箱子/八面体 3 mesh 3 材质，供 03_model；八面体故意无贴图演示回退路径）。
 - `docs/build.md` — 权威构建参考：完整 preset 矩阵、逐工具链命令、多配置生成器说明、运行时行为（Esc/WASD/鼠标/滚轮 FOV）。
 - `src/`、`tests/`、`include/` 当前不存在（README 规划中，勿假设存在）。
 
@@ -49,20 +50,20 @@ cmake --build --preset mingw-gcc-debug
 - **格式**：clang-format（Google 基础，4 空格缩进，100 列，指针/引用左对齐，include 按类分组排序）；clang-tidy 已启用 bugprone/cert/clang-analyzer/concurrency/cppcoreguidelines/modernize/performance/portability/readability 九族（18 项排除，命名约定、函数规模阈值）。改完代码用 `clang-format -i` 格式化。
 - **命名**：函数/变量/局部 struct 一律 `snake_case`；`constexpr` 常量 `snake_case`（如 `window_width`、`mouse_sensitivity{0.10F}`）；宏 `SCREAMING_SNAKE`。float 字面量带 `F` 后缀、unsigned 带 `U` 后缀、初始化一律花括号 `{}`、局部常量用 `const`。
 - **GLSL 命名**：attribute 前缀 `a_`（`a_pos`、`a_color`、`a_normal`、`a_tex_coord`）；struct PascalCase（`Material`、`PointLight`）、成员 `snake_case`。
-- **include 顺序**（固定约定，13 个文件一致）：标准库（字母序）→ 空行 → `<glad/glad.h>`（必须先于 glfw3.h，GLAD 定义 GL 类型）→ 空行 → `<GLFW/glfw3.h>` → 空行 → glm 头（`glm.hpp`、`gtc/matrix_transform.hpp`、`gtc/type_ptr.hpp`）→ 空行 → `#define STB_IMAGE_IMPLEMENTATION` + `<stb_image.h>`（纹理示例）→ `namespace {`。
+- **include 顺序**（固定约定）：标准库（字母序）→ 空行 → `<glad/glad.h>`（必须先于 glfw3.h，GLAD 定义 GL 类型）→ 空行 → `<GLFW/glfw3.h>` → 空行 → glm 头（`glm.hpp`、`gtc/matrix_transform.hpp`、`gtc/type_ptr.hpp`）→ 空行 → `#define STB_IMAGE_IMPLEMENTATION` + `<stb_image.h>`（纹理示例）→ 空行 → assimp 头（`Importer.hpp`、`postprocess.h`、`scene.h`，模型加载示例）→ `namespace {`。
 - **Doxygen**（中文）：文件头 `/** @file ... @brief ... @details ... */`；公开函数、GLFW 回调、重要常量用 `@brief`，必要时 `@details/@param/@return/@pre/@note/@see`。解释"为什么"和前置条件，避免复述代码。可 `@ref` 交叉引用同文件函数。
 - **就近行内注释**：主题标签前缀 `// OpenGL:`、`// GLFW:`、`// GLM/OpenGL:`、`// Camera:`、`// stb_image:`，说明上下文、状态机、副作用、单位、资源生命周期或失败处理。**首次出现的 `gl*`/`glfw*`/`glad*` 调用必须注释**；自解释的普通 C++ 语句不加注释。
 - **错误处理**：初始化失败 `std::cerr` + `return EXIT_FAILURE`；uniform 位置 -1 检查（getting_started 04-07 在 setup 缓存 `GLint`，lighting 章节在循环内联 `glGetUniformLocation`——沿用所在章节模式）；纹理加载失败打印路径。
-- **CMake 叶子模式**：`add_executable(<target> main.cpp)` → `opengl_lab_apply_common_options(<target>)` → `target_link_libraries(<target> PRIVATE glad::glad glfw glm::glm-header-only)`；纹理示例追加 `stb::stb` 与 `target_compile_definitions(... OPENGL_LAB_ASSET_ROOT="${PROJECT_SOURCE_DIR}/assets")`。注意 **`glfw` 是非命名空间目标**（不是 `glfw::glfw`）。
+- **CMake 叶子模式**：`add_executable(<target> main.cpp)` → `opengl_lab_apply_common_options(<target>)` → `target_link_libraries(<target> PRIVATE glad::glad glfw glm::glm-header-only)`；纹理示例追加 `stb::stb`，模型加载示例追加 `assimp::assimp`，两者均需 `target_compile_definitions(... OPENGL_LAB_ASSET_ROOT="${PROJECT_SOURCE_DIR}/assets")`。注意 **`glfw` 是非命名空间目标**（不是 `glfw::glfw`）。
 - **目标命名**：`<section>__<example>`（双下划线），如 `01_getting_started__04_textures`、`02_lighting__06_multiple_lights`。
 - **提交**：简短祈使式摘要，可选 conventional 前缀（`chore:`/`feat:`/`fix:`）；PR 附摘要、影响的 preset/平台、已运行的验证命令；仅视觉输出变化才附截图。
 - **Agent 专用**：不要提交 `build/`、`compile_commands.json`（镜像目标生成）、CMakeUserPresets.json 或 Conan 输出；工作区已有用户改动不要回滚，相关就先读懂再在其基础上继续。
 
 ## 重要文件
 
-- `CMakeLists.txt`（根）— `include(OpenGLLabOptions)`、`opengl_lab_setup_options()`、`opengl_lab_setup_clangd_support()`、`find_package(glfw3|glad|glm|stb CONFIG REQUIRED)`（目标来自 Conan CMakeDeps）、`OPENGL_LAB_BUILD_EXAMPLES` 时 `add_subdirectory(apps)`。
+- `CMakeLists.txt`（根）— `include(OpenGLLabOptions)`、`opengl_lab_setup_options()`、`opengl_lab_setup_clangd_support()`、`find_package(glfw3|glad|glm|stb|assimp CONFIG REQUIRED)`（目标来自 Conan CMakeDeps）、`OPENGL_LAB_BUILD_EXAMPLES` 时 `add_subdirectory(apps)`。
 - `cmake/OpenGLLabOptions.cmake` — 4 个选项：`OPENGL_LAB_BUILD_EXAMPLES`(ON)、`OPENGL_LAB_ENABLE_WARNINGS_AS_ERRORS`(OFF)、`OPENGL_LAB_WITH_QT`(OFF)、`OPENGL_LAB_WITH_OPENCV`(OFF)（后两者为 Qt/OpenCV 预留）；C++23（扩展关闭）；`-Wall -Wextra -Wpedantic`（MSVC：`/W4 /permissive-`）；`opengl_lab_mirror_compile_commands` 把 compile_commands.json 复制到源码根供 clangd。
-- `conanfile.py`（**仓库根**）— `opengl_lab` v0.1.0，依赖 glfw/3.4、glad/0.1.36、glm/1.0.1、stb/cci.20240531；CMakeDeps + CMakeToolchain、`cmake_layout`。Conan 生成的 toolchain 在 `build/<preset>/build/<config>/generators/`。
+- `conanfile.py`（**仓库根**）— `opengl_lab` v0.1.0，依赖 glfw/3.4、glad/0.1.36、glm/1.0.1、stb/cci.20240531（`force=True` 覆盖 assimp 传递的旧版 stb）、assimp/5.4.3；CMakeDeps + CMakeToolchain、`cmake_layout`。Conan 生成的 toolchain 在 `build/<preset>/build/<config>/generators/`。
 - `CMakePresets.json` — 10 个 `_` 前缀隐藏基 preset + 12 个 configure preset + 14 个 build preset；`CMakeUserPresets.json`（gitignored）include Conan 生成的 toolchain preset。
 - 示例参考：`apps/01_getting_started/07_camera/main.cpp`（相机状态 + 回调模式）、`apps/02_lighting/06_multiple_lights/main.cpp`（多光源数组 uniform）。
 
@@ -71,7 +72,7 @@ cmake --build --preset mingw-gcc-debug
 - 目标平台 Windows；主开发工具链 MSYS2 MinGW GCC（UCRT64），其余 preset 需对应工具链就绪。C++23（GCC 扩展关闭），Conan profile 固定 `cppstd 23`。
 - clangd：依赖源码根 `compile_commands.json`；`.clangd` 已配严格 include 诊断、clang-tidy 覆盖、inlay hints，并移除 MSVC 的 `/Fo*`/`/Fd*`/`/FS` 标志。
 - 无 sanitizer 配置；无 CI；无脚本（除 conanfile.py）。
-- 运行时交互约定（跨示例一致）：Esc 退出、WASD + 鼠标移动相机（07 起）、滚轮缩放 FOV、纹理加载自 `assets/textures/`。
+- 运行时交互约定（跨示例一致）：Esc 退出、WASD + 鼠标移动相机（07 起）、滚轮缩放 FOV、纹理加载自 `assets/textures/`、模型加载自 `assets/models/`（控制台打印场景统计）。Git Bash 下运行新构建 exe 若立即退出（退出码 127），是 Git 自带 `mingw64/bin` 抢占运行时 DLL 所致，需把 `ucrt64/bin` 提到 PATH 最前或改用 PowerShell。
 
 ## 测试与 QA
 

@@ -18,6 +18,7 @@ find_package(glfw3 CONFIG REQUIRED)
 find_package(glad CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(stb CONFIG REQUIRED)
+find_package(assimp CONFIG REQUIRED)
 
 if(OPENGL_LAB_BUILD_EXAMPLES)
     add_subdirectory(apps)

@@ -1,0 +1,24 @@
+# 舞台场景的三种材质：
+# - ground_checker：仅漫反射贴图（棋盘格），无高光，演示"只有 diffuse 贴图"的材质。
+# - box_container：漫反射 + 镜面贴图，对应 02_lighting 章节的箱子。
+# - octa_plain：纯色材质（无任何贴图），演示 Model 类无贴图时的 1x1 回退纹理路径。
+newmtl ground_checker
+Ns 16.000000
+Ka 0.050000 0.050000 0.050000
+Kd 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+map_Kd ground_diffuse.ppm
+
+newmtl box_container
+Ns 32.000000
+Ka 0.050000 0.050000 0.050000
+Kd 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+map_Kd box_diffuse.ppm
+map_Ks box_specular.ppm
+
+newmtl octa_plain
+Ns 64.000000
+Ka 0.100000 0.100000 0.100000
+Kd 0.550000 0.700000 0.950000
+Ks 0.800000 0.800000 0.800000

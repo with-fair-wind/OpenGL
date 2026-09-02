@@ -1,0 +1,9 @@
+# 箱子材质：漫反射贴图给出木箱底色，镜面贴图让边框区域产生高光。
+# Ns 对应 OpenGL 侧的 material.shininess（高光指数）。
+newmtl crate
+Ns 32.000000
+Ka 0.100000 0.100000 0.100000
+Kd 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+map_Kd crate_diffuse.ppm
+map_Ks crate_specular.ppm

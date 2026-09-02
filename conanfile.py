@@ -13,7 +13,9 @@ class OpenGLLabConan(ConanFile):
         self.requires("glfw/3.4")
         self.requires("glad/0.1.36")
         self.requires("glm/1.0.1")
-        self.requires("stb/cci.20240531")
+        # stb: assimp 传递依赖旧版 stb，这里强制整个依赖图使用项目版本（header-only，向前兼容）。
+        self.requires("stb/cci.20240531", force=True)
+        self.requires("assimp/5.4.3")
 
     def layout(self):
         cmake_layout(self)

@@ -261,6 +261,9 @@ build/msvc-vs2026/OpenGLLab.sln
 .\build\mingw-gcc-debug\apps\02_lighting\04_lighting_maps\02_lighting__04_lighting_maps.exe
 .\build\mingw-gcc-debug\apps\02_lighting\05_light_casters\02_lighting__05_light_casters.exe
 .\build\mingw-gcc-debug\apps\02_lighting\06_multiple_lights\02_lighting__06_multiple_lights.exe
+.\build\mingw-gcc-debug\apps\03_model_loading\01_assimp\03_model_loading__01_assimp.exe
+.\build\mingw-gcc-debug\apps\03_model_loading\02_mesh\03_model_loading__02_mesh.exe
+.\build\mingw-gcc-debug\apps\03_model_loading\03_model\03_model_loading__03_model.exe
 ```
 
 多配置生成器通常会在目标目录下多一层配置名，例如 `Debug` 或 `Release`。以 Ninja Multi-Config 为例：
@@ -279,6 +282,11 @@ build/msvc-vs2026/OpenGLLab.sln
 .\build\msvc-ninja-multi\apps\02_lighting\04_lighting_maps\Debug\02_lighting__04_lighting_maps.exe
 .\build\msvc-ninja-multi\apps\02_lighting\05_light_casters\Debug\02_lighting__05_light_casters.exe
 .\build\msvc-ninja-multi\apps\02_lighting\06_multiple_lights\Debug\02_lighting__06_multiple_lights.exe
+.\build\msvc-ninja-multi\apps\03_model_loading\01_assimp\Debug\03_model_loading__01_assimp.exe
+.\build\msvc-ninja-multi\apps\03_model_loading\02_mesh\Debug\03_model_loading__02_mesh.exe
+.\build\msvc-ninja-multi\apps\03_model_loading\03_model\Debug\03_model_loading__03_model.exe
 ```
 
-窗口打开后，按 `Esc` 退出。摄像机示例会捕获鼠标光标，使用 `W/A/S/D` 移动、鼠标移动调整视角、滚轮调整 FOV。纹理相关示例会从源码树的 `assets/textures/` 加载图片；如果移动仓库目录，请重新 configure/build，让 `OPENGL_LAB_ASSET_ROOT` 更新为新的路径。
+窗口打开后，按 `Esc` 退出。摄像机示例会捕获鼠标光标，使用 `W/A/S/D` 移动、鼠标移动调整视角、滚轮调整 FOV。纹理相关示例会从源码树的 `assets/textures/` 加载图片；模型加载章节（`03_model_loading`）会从 `assets/models/` 读取 OBJ 模型及其材质贴图，并在控制台打印场景统计与材质回退信息。如果移动仓库目录，请重新 configure/build，让 `OPENGL_LAB_ASSET_ROOT` 更新为新的路径。
+
+注意从 MSYS2 Git Bash 运行时，Git 自带的 `mingw64/bin` 可能排在 `ucrt64/bin` 之前，导致 exe 加载到不匹配的 `libstdc++-6.dll`/`libgcc_s_seh-1.dll` 而立即退出（退出码 127）。此时把 `ucrt64/bin` 提到 PATH 最前，或改用 PowerShell/CMD 运行。
