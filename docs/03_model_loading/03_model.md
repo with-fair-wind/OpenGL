@@ -225,6 +225,10 @@ loaded 'stage.obj': 3 mesh(es)
 
 使用 Assimp，你能够加载互联网上的无数模型。有很多资源网站都提供了多种格式的免费 3D 模型供你下载。但还是要注意，有些模型会不能正常地载入，纹理的路径会出现问题，或者 Assimp 并不支持它的格式。
 
+## 延伸阅读
+
+- [如何将 Wavefront(.obj) 模型纹理加载到 OpenGL](https://www.youtube.com/watch?v=4DQquG_o-Ac)：由 Matthew Early 制作的如何在 Blender 中设置 3D 模型的视频教程，让它们可以直接在当前的模型加载器下正确工作（因为我们选择的纹理设置并不总能做到开箱即用）。
+
 ## 练习
 
 - 在 `process_node` 中累乘节点变换并打印每个节点的 `mTransformation`，验证 stage.obj 全为单位阵。
