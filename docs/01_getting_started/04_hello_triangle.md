@@ -484,9 +484,13 @@ glDrawElements(
 
 `glDrawElements` 第一个参数指定绘制模式，和 `glDrawArrays` 一样；第二个参数是要绘制的顶点个数，这里用 `indices.size()`（即 6）；第三个参数是索引的类型，这里是 `GL_UNSIGNED_INT`；最后一个参数可以指定 EBO 中的偏移量，这里填 `nullptr`（即 0）。
 
-> **注意：**
+> **注意（VAO 与 EBO 的绑定关系）：**
 >
-> 当目标是 `GL_ELEMENT_ARRAY_BUFFER` 时，VAO 会储存 `glBindBuffer` 的调用，也就是说 EBO 的绑定关系也记在 VAO 里。同样，它也记录解绑调用——所以确保不要在解绑 VAO 之前解绑索引缓冲，否则 VAO 里就没有这个 EBO 配置了。
+> 当目标是 `GL_ELEMENT_ARRAY_BUFFER` 时，`glBindBuffer` 修改的是**当前绑定 VAO** 的状态——EBO 的绑定关系记录在 VAO 里。由此得到一条硬性的顺序约束：**`glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo)` 必须在 `glBindVertexArray(vao)` 之后、`glBindVertexArray(0)` 之前调用**——写入哪个 VAO 取决于调用那一刻谁被绑定；顺序颠倒的话，绑定写入的是当时的 VAO（通常是 0 号），目标 VAO 从未记录 EBO，绘制时 `glDrawElements` 直接得到 `GL_INVALID_OPERATION`。
+>
+> 这与 `GL_ARRAY_BUFFER` 存在重要区别：后者是上下文**全局绑定**，不属于任何 VAO——所以 VBO 在绑 VAO 之前还是之后绑定都无所谓，VAO 对 VBO 的「记忆」只发生在 `glVertexAttribPointer` 那一刻（它把当时 `GL_ARRAY_BUFFER` 上的缓冲记进属性配置）。EBO 则完全依赖绑定时机。
+>
+> 解绑（绑定 0）同样写入当前 VAO：**在仍绑定着某 VAO 时解绑 EBO，会清空这个 VAO 的索引配置**，后果同样是 `GL_INVALID_OPERATION`（显式错误，而不是静默画不出来）。先解绑 VAO 再解绑 EBO 虽不影响该 VAO，但 core profile 下 VAO 0 不是可用对象、规范不建议此时修改元素数组绑定——最干净的做法是**只解绑 VAO、不解绑 EBO**，本仓库示例正是如此（`04_textures/main.cpp` 从不调用 `glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)`）。
 
 > **进阶（glDrawArrays vs glDrawElements）：** **两者都按「当前 VAO 记录的配置」取数，区别只在顶点怎么来**：
 >
@@ -532,6 +536,7 @@ glDrawElements(
   - `compile_shader`：编译单个 GLSL 着色器并查错；
   - `create_shader_program`：编译两个阶段并链接成着色器程序。
 - `main()` 中的流程为：初始化 GLFW → 创建窗口与 OpenGL 上下文 → 初始化 GLAD → 创建着色器程序 → 生成 VAO/VBO 并上传顶点 → 进入渲染循环（`glDrawArrays` 绘制三角形）→ 退出时删除资源。
+- 本示例用 `glDrawArrays` 绘制、不涉及 EBO；EBO 在下一节 `04_textures` 示例中引入——该示例只解绑 `GL_ARRAY_BUFFER` 与 VAO、从不解绑 EBO，正是上文「注意」块的推荐实践。
 
 构建并运行（以 MinGW GCC Debug preset 为例，需要先确保 `ucrt64/bin` 在 PATH 中）：
 
