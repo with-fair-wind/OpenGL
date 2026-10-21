@@ -1,6 +1,6 @@
 # OpenGL Lab
 
-这是一个面向 OpenGL 新手的现代 C++ 学习仓库，目标平台为 Windows。代码路线主要参考 [LearnOpenGL](https://learnopengl.com/)，中文教程基于 [LearnOpenGL-CN](https://github.com/with-fair-wind/LearnOpenGL-CN) 整理修订，并结合规范修正技术表述。当前已实现入门、光照和模型加载三个章节。
+这是一个面向 OpenGL 新手的现代 C++ 学习仓库，目标平台为 Windows。代码路线主要参考 [LearnOpenGL](https://learnopengl.com/)，中文教程基于 [LearnOpenGL-CN](https://github.com/with-fair-wind/LearnOpenGL-CN) 整理修订，并结合规范修正技术表述。当前已实现入门、光照、模型加载和高级 OpenGL 四个章节。
 
 ## 当前目标
 
@@ -17,8 +17,9 @@
 | 01 入门 | [10 篇教程](docs/01_getting_started/README.md) | 7 个主示例 + 3 个着色器练习 |
 | 02 光照 | [6 篇教程](docs/02_lighting/README.md) | 6 个主示例 |
 | 03 模型加载 | [3 篇教程](docs/03_model_loading/README.md) | 3 个主示例 |
+| 04 高级 OpenGL | [11 篇教程](docs/04_advanced_opengl/README.md) | 11 个主示例 |
 
-合计 19 篇教程、16 个主示例和 3 个练习目标。教程使用 GitHub Markdown，图片存放在 `docs/img/`；实际示例代码片段对应 `apps/` 源码，概念示例另行标明。下一阶段为 04 Advanced OpenGL，目前尚未创建对应教程和示例。
+合计 30 篇教程、27 个主示例和 3 个练习目标。教程使用 GitHub Markdown，图片存放在 `docs/img/`；实际示例代码片段对应 `apps/` 源码，概念示例另行标明。下一阶段为 05 Advanced Lighting，目前尚未创建对应教程和示例。
 
 ## 依赖
 
@@ -50,10 +51,11 @@ Conan 当前管理这些库：
 |   |   |-- 04_lighting_maps/
 |   |   |-- 05_light_casters/
 |   |   `-- 06_multiple_lights/
-|   `-- 03_model_loading/
-|       |-- 01_assimp/
-|       |-- 02_mesh/
-|       `-- 03_model/
+|   |-- 03_model_loading/
+|   |   |-- 01_assimp/
+|   |   |-- 02_mesh/
+|   |   `-- 03_model/
+|   `-- 04_advanced_opengl/   # 11 例：深度测试至离屏 MSAA
 |-- assets/                  # 纹理与模型；GLSL 内嵌在示例源码中
 |   |-- textures/
 |   `-- models/
@@ -63,6 +65,7 @@ Conan 当前管理这些库：
 |   |-- 01_getting_started/
 |   |-- 02_lighting/
 |   |-- 03_model_loading/
+|   |-- 04_advanced_opengl/
 |   |-- img/
 |   `-- build.md
 |-- CMakeLists.txt           # 根构建入口
@@ -104,5 +107,7 @@ Conan 当前管理这些库：
 1. Assimp 导入与节点树遍历：`apps/03_model_loading/01_assimp/`
 2. Mesh 数据与 GPU 资源生命周期：`apps/03_model_loading/02_mesh/`
 3. Model 多网格、多材质与贴图回退：`apps/03_model_loading/03_model/`
+
+第四阶段进入[高级 OpenGL](docs/04_advanced_opengl/README.md)：深度测试 → 模板测试 → 混合 → 面剔除 → 帧缓冲 → 立方体贴图 → 高级数据 → 高级 GLSL → 几何着色器 → 实例化 → 抗锯齿。每节均有独立示例；键鼠、空格切换与有限帧运行方式见[构建指南](docs/build.md#高级-opengl-示例)。
 
 继续扩展时沿用独立示例结构；需要引入可复用封装时，再单独设计公共模块及其测试。

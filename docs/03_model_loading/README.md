@@ -44,4 +44,4 @@ flowchart LR
 
 本章依赖前两章的全部积累：顶点布局与 VAO/VBO/EBO（Getting Started）、Phong 光照 + 贴图材质（Lighting）。合流之后，入门三部曲闭环。
 
-上一章：[多光源](../02_lighting/06_multiple_lights.md) · 下一章：04 Advanced OpenGL（教程尚未编写）。
+上一章：[多光源](../02_lighting/06_multiple_lights.md) · 下一章：[高级 OpenGL](../04_advanced_opengl/README.md)。

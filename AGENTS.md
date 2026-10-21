@@ -2,7 +2,7 @@
 
 ## 项目概述
 
-OpenGL Lab 是一个基于 C++23、CMake ≥ 3.28 和 Conan 2 的 LearnOpenGL（http://learnopengl.com）学习仓库，目标平台为 Windows。每个示例是独立可执行程序，按教程章节分组。当前进度：`01_getting_started`（7 例 + 03_shaders 3 个练习目标）、`02_lighting`（6 例）与 `03_model_loading`（3 例）。无 CI、无测试框架（尚未配置）。
+OpenGL Lab 是一个基于 C++23、CMake ≥ 3.28 和 Conan 2 的 LearnOpenGL（http://learnopengl.com）学习仓库，目标平台为 Windows。每个示例是独立可执行程序，按教程章节分组。当前进度：`01_getting_started`（7 例 + 03_shaders 3 个练习目标）、`02_lighting`（6 例）、`03_model_loading`（3 例）与 `04_advanced_opengl`（11 例）；配套教程共 30 篇。无 CI、无测试框架（尚未配置）。
 
 ## 架构与数据流
 
@@ -18,12 +18,13 @@ OpenGL Lab 是一个基于 C++23、CMake ≥ 3.28 和 Conan 2 的 LearnOpenGL（
 - `apps/01_getting_started/` — 入门章节 7 例：`01_hello_window`（无 OpenGL 对象）… `07_camera`（EBO/纹理/变换/坐标系/第一人称相机逐步引入）。
 - `apps/02_lighting/` — 光照章节 6 例：`01_colors` … `06_multiple_lights`（Phong 光照、材质/光源 struct uniform、光照贴图、点光源衰减、多光源数组 uniform）。`03_shaders` 下另有 `exercise1-3.cpp` 练习目标。
 - `apps/03_model_loading/` — 模型加载章节 3 例：`01_assimp`（导入 OBJ、打印 aiScene 统计、沿 aiNode 节点树递归渲染、法线可视化着色）、`02_mesh`（Vertex/Mesh 结构 + make/draw/destroy 函数封装）、`03_model`（Model 递归加载多 mesh/多材质，贴图相对模型目录解析，无贴图回退 1x1 纯色纹理）。
+- `apps/04_advanced_opengl/` — 高级 OpenGL 11 例：深度测试、模板轮廓、混合、面剔除、离屏帧缓冲、立方体贴图、高级缓冲数据、UBO/接口块、几何着色器、实例化、离屏 MSAA。每例的 helper 仍复制在匿名命名空间，格纹/透明面/环境颜色由程序定义，不新增依赖。支持 `--frames N` 隐藏窗口冒烟、`--mode M` 选择初始模式、`--capture path.ppm` 保存末帧；图像来源记录在 `docs/img/04/README.md`。
 - `cmake/` — `OpenGLLabOptions.cmake`：公共选项、C++23 标准、警告标志、clangd compile_commands 镜像目标。
 - `conan/` — `conanfile.py` 在仓库根（不在 conan/ 下）；`conan/profiles/` 存 7 个 Conan profile（mingw-gcc、mingw-clang、msvc-ninja、msvc-ninja-multi、clang-cl、clang-cl-ninja-multi、msvc-vs2026）。
 - `assets/textures/` — 3 个 PPM 纹理：`checker.ppm`、`container_diffuse.ppm`、`container_specular.ppm`；`assets/models/` — 手写 OBJ/MTL 模型：`crate/`（单 mesh 立方体 + 木箱贴图，供 01_assimp）、`stage/`（地面/箱子/八面体 3 mesh 3 材质，供 03_model；八面体故意无贴图演示回退路径）。
-- `docs/<章节>/` — 分章中文教程（`01_getting_started`、`02_lighting`、`03_model_loading`），每章 README 索引 + 篇章 md；`docs/img/<NN>/<篇>/` 存章节图片（含本仓库示例截图）。
+- `docs/<章节>/` — 分章中文教程（`01_getting_started`、`02_lighting`、`03_model_loading`、`04_advanced_opengl`），每章 README 索引 + 篇章 md；`docs/img/<NN>/<篇>/` 存章节图片（含本仓库示例截图）。
 - `docs/build.md` — 权威构建参考：完整 preset 矩阵、逐工具链命令、多配置生成器说明、运行时行为（Esc/WASD/鼠标/滚轮 FOV）。
-- `src/`、`tests/`、`include/` 当前不存在（README 规划中，勿假设存在）。
+- `src/`、`tests/`、`include/` 当前不存在，勿假设存在。
 
 ## 开发命令
 
@@ -83,7 +84,7 @@ cmake --build --preset mingw-gcc-debug
 
 ## 教程文档规范（docs/ 分章教程）
 
-`docs/01_getting_started/`、`docs/02_lighting/`、`docs/03_model_loading/` 是已完成的分章中文教程（基于 LearnOpenGL-CN 整理修订）；后续章节（04_advanced_opengl 等）沿用同一契约：
+`docs/01_getting_started/`、`docs/02_lighting/`、`docs/03_model_loading/`、`docs/04_advanced_opengl/` 是已完成的分章中文教程（基于 LearnOpenGL-CN 整理修订）；后续章节（05_advanced_lighting 等）沿用同一契约：
 
 - **命名**：`docs/<章节>/<NN>_<slug>.md`（snake_case，与 `apps/` 目录一致）；每章一个索引 `README.md`；图片放 `docs/img/<章节>/<NN>/`，文中用相对路径 `![](../img/<章节>/<NN>/xxx.png)`。
 - **结构**：H1 中文标题 → 元数据表（原文/作者/来源，示例篇加"本仓库示例"行）→ 正文 → `## 本仓库示例`（示例路径 + 构建/运行命令，仅示例篇）→ `## 本章整体回顾` → 底部"下一节"链接（链式串联；末篇指向下一章节，章节未写时用纯文本指引而非断链）。

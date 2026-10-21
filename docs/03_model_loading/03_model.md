@@ -264,4 +264,4 @@ cmake --build --preset mingw-gcc-debug
 - **局部（资源组织）**：`assets/models/<name>/` 下 OBJ + MTL + PPM 自包含；纯文本资源可直接阅读、diff 友好。
 - **整体（三章汇合）**：模型文件 → Assimp 统一数据模型 → Model/Mesh 封装 → 光照章节的冯氏光照 + 贴图材质管线 → 屏幕。至此入门三部曲（Getting Started / Lighting / Model Loading）闭环：**能开窗口、能打光照、能加载模型**。下一步的 Advanced OpenGL 章节将深入管线的更深处——深度测试、模板测试、混合、帧缓冲、实例化渲染等。
 
-下一章：04 Advanced OpenGL（进阶 OpenGL 章节，教程尚未编写；可先阅读 learnopengl.com 的 Advanced-OpenGL 部分）
+下一章：[高级 OpenGL：深度测试](../04_advanced_opengl/01_depth_testing.md)。

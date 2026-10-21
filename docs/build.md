@@ -290,3 +290,50 @@ build/msvc-vs2026/OpenGLLab.sln
 窗口打开后，按 `Esc` 退出。摄像机示例会捕获鼠标光标，使用 `W/A/S/D` 移动、鼠标移动调整视角、滚轮调整 FOV。纹理相关示例会从源码树的 `assets/textures/` 加载图片；模型加载章节（`03_model_loading`）会从 `assets/models/` 读取 OBJ 模型及其材质贴图，并在控制台打印场景统计与材质回退信息。如果移动仓库目录，请重新 configure/build，让 `OPENGL_LAB_ASSET_ROOT` 更新为新的路径。
 
 注意从 MSYS2 Git Bash 运行时，Git 自带的 `mingw64/bin` 可能排在 `ucrt64/bin` 之前，导致 exe 加载到不匹配的 `libstdc++-6.dll`/`libgcc_s_seh-1.dll` 而立即退出（退出码 127）。此时把 `ucrt64/bin` 提到 PATH 最前，或改用 PowerShell/CMD 运行。
+
+## 高级 OpenGL 示例
+
+`apps/04_advanced_opengl/` 的 11 个独立目标沿用上述全部构建 preset，只使用已有的 GLAD、GLFW 和 GLM，无需新增 Conan 依赖。完整教程入口见[高级 OpenGL 索引](04_advanced_opengl/README.md)。
+
+| 示例目录 | 目标名称 | 空格切换 |
+| --- | --- | --- |
+| `01_depth_testing` | `04_advanced_opengl__01_depth_testing` | 颜色 / 原始深度 / 线性深度 |
+| `02_stencil_testing` | `04_advanced_opengl__02_stencil_testing` | — |
+| `03_blending` | `04_advanced_opengl__03_blending` | — |
+| `04_face_culling` | `04_advanced_opengl__04_face_culling` | CCW / CW 正面定义 |
+| `05_framebuffers` | `04_advanced_opengl__05_framebuffers` | 原色 / 反相 / 灰度 / 锐化 |
+| `06_cubemaps` | `04_advanced_opengl__06_cubemaps` | 反射 / 折射 |
+| `07_advanced_data` | `04_advanced_opengl__07_advanced_data` | — |
+| `08_advanced_glsl` | `04_advanced_opengl__08_advanced_glsl` | — |
+| `09_geometry_shader` | `04_advanced_opengl__09_geometry_shader` | — |
+| `10_instancing` | `04_advanced_opengl__10_instancing` | — |
+| `11_anti_aliasing` | `04_advanced_opengl__11_anti_aliasing` | 离屏 MSAA / 单采样 |
+
+三维示例使用 `W/A/S/D` 移动、鼠标转向、滚轮改变 FOV；`07_advanced_data`、`09_geometry_shader` 和 `10_instancing` 使用固定二维视图，不捕获鼠标。全部支持 `Esc` 退出。格纹、透明面和六面环境颜色均在源码中定义；本章不读取外部纹理或模型文件。
+
+例如，在已安装依赖后构建并运行帧缓冲示例：
+
+```powershell
+cmake --preset mingw-gcc-debug
+cmake --build --preset mingw-gcc-debug --target 04_advanced_opengl__05_framebuffers
+.\build\mingw-gcc-debug\apps\04_advanced_opengl\05_framebuffers\04_advanced_opengl__05_framebuffers.exe
+```
+
+多配置目录仍在目标目录下增加配置层，例如：
+
+```powershell
+.\build\msvc-ninja-multi\apps\04_advanced_opengl\05_framebuffers\Debug\04_advanced_opengl__05_framebuffers.exe
+```
+
+### 有限帧检查与截图
+
+本章新示例支持 `--frames N`：N 为正整数，创建隐藏窗口并绘制指定帧数后自动退出，便于驱动上的冒烟检查。配合 `--capture <path.ppm>` 保存最后一帧的默认后缓冲；输出目录需已存在，图像为从上到下的二进制 PPM（P6）。未指定参数时正常显示交互窗口。
+
+`--mode M` 可直接选择初始显示模式，编号从 0 开始，顺序与上表空格切换一致；没有切换模式的示例只接受 0。该参数同时适用于交互窗口和有限帧运行，便于复现深度显示、后处理、反射/折射及 MSAA 开关画面。
+
+```powershell
+.\build\mingw-gcc-debug\apps\04_advanced_opengl\11_anti_aliasing\04_advanced_opengl__11_anti_aliasing.exe --frames 3 --capture build\anti_aliasing.ppm
+.\build\mingw-gcc-debug\apps\04_advanced_opengl\05_framebuffers\04_advanced_opengl__05_framebuffers.exe --frames 3 --mode 2 --capture build\framebuffers_grayscale.ppm
+```
+
+GLFW/GLAD 初始化、shader 编译链接、必需 uniform、缓冲映射、FBO 完整性、截图写入或帧内 OpenGL 错误会报告失败并返回非零退出码。零退出码能证明这些运行路径通过，仍应结合画面检查视觉效果；隐藏窗口运行不会替代实际键鼠和窗口缩放的交互验证。离屏 MSAA 会打印请求的采样数，实际附件是否兼容还由完整性检查确认。
