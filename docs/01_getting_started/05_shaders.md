@@ -21,7 +21,9 @@
 
 着色器的开头总是要声明版本，接着是输入和输出变量、uniform 和 `main` 函数。每个着色器的入口点都是 `main` 函数，在这个函数中我们处理所有的输入变量，并将结果输出到输出变量中。如果你不知道什么是 uniform 也不用担心，我们后面会进行讲解。
 
-一个典型的着色器有下面的结构：
+下面先用概念示例介绍 GLSL 语法；这些片段用于独立说明语言和查询接口，并非仓库 `main.cpp` 的摘录。后面的顶点/片段着色器与顶点属性配置再对应本仓库实际代码。
+
+一个典型的着色器有下面的结构（占位伪代码，不能直接编译）：
 
 ```glsl
 #version version_number
@@ -44,9 +46,10 @@ void main()
 当我们特别谈论到顶点着色器的时候，每个输入变量也叫**顶点属性**（Vertex Attribute）。我们能声明的顶点属性是有上限的，它一般由硬件决定。OpenGL 确保至少有 16 个包含 4 分量的顶点属性可用，但是有些硬件或许允许更多的顶点属性，你可以查询 `GL_MAX_VERTEX_ATTRIBS` 来获取具体的上限：
 
 ```c++
-int nrAttributes;
-glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
-std::cout << "Maximum nr of vertex attributes supported: " << nrAttributes << std::endl;
+GLint max_vertex_attributes{};
+// OpenGL: 当前线程须已有有效上下文，并且 GLAD 已初始化；查询可用的属性位置数。
+glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &max_vertex_attributes);
+std::cout << "Maximum vertex attributes supported: " << max_vertex_attributes << '\n';
 ```
 
 通常情况下它至少会返回 16 个，大部分情况下是够用了。
@@ -55,7 +58,9 @@ std::cout << "Maximum nr of vertex attributes supported: " << nrAttributes << st
 
 ## 数据类型
 
-和其他编程语言一样，GLSL 有数据类型可以指定变量的种类。GLSL 包含 C 等其它语言大部分的默认基础数据类型：`int`、`float`、`double`、`uint` 和 `bool`。GLSL 也有两种容器类型，它们会在这个教程中使用很多，分别是向量（Vector）和矩阵（Matrix），其中矩阵我们会在之后的教程里再讨论。
+本仓库使用 `#version 330 core`，本节讨论的基础标量类型为 `int`、`uint`、`float` 和 `bool`。GLSL 还提供向量（Vector）和矩阵（Matrix），其中矩阵会在之后的教程里讨论。
+
+> **版本边界：** `double` 和 `dvec2/3/4` 在 [GLSL 3.30 核心语言规范 §3.6](https://registry.khronos.org/OpenGL/specs/gl/GLSLangSpec.3.30.pdf) 中属于保留字，不能当作默认可用类型。双精度需要支持它的更高 GLSL 版本，或在驱动支持时显式启用 [`GL_ARB_gpu_shader_fp64`](https://registry.khronos.org/OpenGL/extensions/ARB/ARB_gpu_shader_fp64.txt) 扩展；本仓库的 3.30 示例未启用该扩展。
 
 ### 向量
 
@@ -69,7 +74,6 @@ GLSL 中的向量是一个可以包含 2、3 或 4 个分量的容器，分量�
 | `bvecn` | 包含 `n` 个 bool 分量的向量 |
 | `ivecn` | 包含 `n` 个 int 分量的向量 |
 | `uvecn` | 包含 `n` 个 unsigned int 分量的向量 |
-| `dvecn` | 包含 `n` 个 double 分量的向量 |
 
 大多数时候我们使用 `vecn`，因为 float 足够满足大多数要求了。
 
@@ -78,10 +82,10 @@ GLSL 中的向量是一个可以包含 2、3 或 4 个分量的容器，分量�
 向量这一数据类型也允许一些有趣而灵活的分量选择方式，叫做**重组**（Swizzling）。重组允许这样的语法：
 
 ```glsl
-vec2 someVec;
-vec4 differentVec = someVec.xyxx;
-vec3 anotherVec = differentVec.zyw;
-vec4 otherVec = someVec.xxxx + anotherVec.yxzy;
+vec2 some_vec = vec2(0.5, 0.7);
+vec4 different_vec = some_vec.xyxx;
+vec3 another_vec = different_vec.zyw;
+vec4 other_vec = some_vec.xxxx + another_vec.yxzy;
 ```
 
 你可以用上面 4 个字母做任意组合（最多 4 个）来创建一个新的（同类型）向量，只要原向量包含这些分量即可；例如，你不允许在一个 `vec2` 向量中去获取 `.z` 分量。我们也可以把一个向量作为参数传给不同的向量构造函数，以减少所需参数的数量：
@@ -89,7 +93,7 @@ vec4 otherVec = someVec.xxxx + anotherVec.yxzy;
 ```glsl
 vec2 vect = vec2(0.5, 0.7);
 vec4 result = vec4(vect, 0.0, 0.0);
-vec4 otherResult = vec4(result.xyz, 1.0);
+vec4 other_result = vec4(result.xyz, 1.0);
 ```
 
 向量是一种灵活的数据类型，我们可以把它用在各种输入和输出上。学完教程你会看到很多新颖的管理向量的例子。

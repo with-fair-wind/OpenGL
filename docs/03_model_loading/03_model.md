@@ -162,7 +162,7 @@ void process_node(Model& model, const aiNode* node, const aiScene* scene) {
 3. **回退**：材质没有（或加载失败）漫反射贴图时，读取 MTL 的 `Kd` 纯色生成 **1×1 纯色纹理**；镜面缺贴图回退**黑色**（高光归零）。回退成纹理而不是给着色器加分支——采样逻辑完全不用改（呼应上一章光照贴图一节的「常见误解」）。
 4. **shininess**：从 `AI_MATKEY_SHININESS`（MTL 的 `Ns`）读取，失败默认 32——材质参数尽量尊重建模师的设定。
 
-> **进阶（1×1 回退纹理的 mipmap 陷阱）：** `create_solid_texture` 的 MIN_FILTER 用的是 **GL_LINEAR 而不是 GL_LINEAR_MIPMAP_LINEAR**，这不是随手写的：mip 链不完整（1×1 纹理没有更小的 mip）时，`GL_LINEAR_MIPMAP_LINEAR` 会让纹理被视为**不完整**，采样结果恒为黑——一个著名的「回退纹理一片黑」bug。要么补全 mip（对 1×1 无意义），要么把 MIN_FILTER 降到不需要 mip 的模式。凡是手工构造的非 mip 链纹理（纯色、LUT、查表图）都要记住这一条。
+> **进阶（1×1 回退纹理与 mipmap 完整性）：** **1×1 纹理的基础层本身就可以构成完整 mip 链。** 按 [OpenGL 3.3 规范 §3.8.11、§3.8.14](https://registry.khronos.org/OpenGL/specs/gl/glspec33.core.pdf)，mip 链缩小到 1×1 即结束；本例在默认基础层 0 定义了 1×1 RGB 图像，即使使用 `GL_LINEAR_MIPMAP_LINEAR` 也不会因此不完整。`create_solid_texture` 使用 `GL_LINEAR` 足以表达纯色采样。较大的纹理若只定义基础层却选择需要 mipmap 的过滤模式，才需要补齐所需层级、限制层级范围，或改用不需要 mipmap 的过滤模式。
 
 ## 重大优化：纹理去重
 

@@ -1,6 +1,6 @@
 # OpenGL Lab
 
-这是一个面向 OpenGL 新手的现代 C++ 学习仓库。代码路线主要参考 [LearnOpenGL CN](https://learnopengl-cn.github.io/)，工程组织会尽量保持清晰、可扩展，方便后续继续接入 Qt、OpenCV、模型加载、图像处理和小型渲染实验。
+这是一个面向 OpenGL 新手的现代 C++ 学习仓库，目标平台为 Windows。代码路线主要参考 [LearnOpenGL](https://learnopengl.com/)，中文教程基于 [LearnOpenGL-CN](https://github.com/with-fair-wind/LearnOpenGL-CN) 整理修订，并结合规范修正技术表述。当前已实现入门、光照和模型加载三个章节。
 
 ## 当前目标
 
@@ -10,6 +10,16 @@
 - 使用 C++23 编写示例和后续封装代码。
 - OpenGL 学习路径先从 OpenGL 3.3 Core Profile 开始。
 
+## 当前进度与教程入口
+
+| 章节 | 中文教程 | 可执行示例 |
+| --- | --- | --- |
+| 01 入门 | [10 篇教程](docs/01_getting_started/README.md) | 7 个主示例 + 3 个着色器练习 |
+| 02 光照 | [6 篇教程](docs/02_lighting/README.md) | 6 个主示例 |
+| 03 模型加载 | [3 篇教程](docs/03_model_loading/README.md) | 3 个主示例 |
+
+合计 19 篇教程、16 个主示例和 3 个练习目标。教程使用 GitHub Markdown，图片存放在 `docs/img/`；实际示例代码片段对应 `apps/` 源码，概念示例另行标明。下一阶段为 04 Advanced OpenGL，目前尚未创建对应教程和示例。
+
 ## 依赖
 
 Conan 当前管理这些库：
@@ -18,6 +28,7 @@ Conan 当前管理这些库：
 - `glad`: 加载 OpenGL 函数。
 - `glm`: 图形数学库。
 - `stb`: 加载图片纹理。
+- `assimp`: 导入模型、节点、网格和材质数据。
 
 ## 项目结构
 
@@ -32,38 +43,44 @@ Conan 当前管理这些库：
 |   |   |-- 05_transformations/
 |   |   |-- 06_coordinate_systems/
 |   |   `-- 07_camera/
-|   `-- 02_lighting/
-|       |-- 01_colors/
-|       |-- 02_basic_lighting/
-|       |-- 03_materials/
-|       |-- 04_lighting_maps/
-|       |-- 05_light_casters/
-|       `-- 06_multiple_lights/
-|-- assets/                  # shader、纹理、模型等资源
-|   `-- textures/
+|   |-- 02_lighting/
+|   |   |-- 01_colors/
+|   |   |-- 02_basic_lighting/
+|   |   |-- 03_materials/
+|   |   |-- 04_lighting_maps/
+|   |   |-- 05_light_casters/
+|   |   `-- 06_multiple_lights/
+|   `-- 03_model_loading/
+|       |-- 01_assimp/
+|       |-- 02_mesh/
+|       `-- 03_model/
+|-- assets/                  # 纹理与模型；GLSL 内嵌在示例源码中
+|   |-- textures/
+|   `-- models/
 |-- cmake/                   # 项目级 CMake helper
 |-- conan/                   # 本仓库 Conan profile
-|-- docs/                    # 构建说明和项目文档
+|-- docs/                    # 分章节中文教程与构建指南
+|   |-- 01_getting_started/
+|   |-- 02_lighting/
+|   |-- 03_model_loading/
+|   |-- img/
+|   `-- build.md
 |-- CMakeLists.txt           # 根构建入口
 |-- CMakePresets.json        # 常用 configure/build preset
 `-- conanfile.py             # Conan 2 依赖声明
 ```
 
-未来建议继续扩展：
-
-```text
-src/opengl_lab/              # 可复用 C++ 封装
-tests/                       # 单元测试或小型验证测试
-third_party/                 # 仅放无法通过 Conan 管理的极少数依赖
-```
+每个示例独立维护一个 `main.cpp` 和一个 `CMakeLists.txt`。窗口、Shader、纹理等辅助代码保留在各文件的匿名命名空间中，便于逐篇学习和对照；当前没有共享库、`src/`、`include/` 或 `tests/` 目录。
 
 ## 构建
 
 完整构建矩阵、Conan 安装方式、单配置/多配置生成器说明，以及运行示例的命令见 [构建指南](docs/build.md)。
 
+当前以 configure + build 作为冒烟检查，尚未接入 CTest 测试用例、测试框架或 CI。
+
 ## 学习路线
 
-第一阶段建议按这个顺序添加示例：
+第一阶段按以下顺序学习已实现的入门示例：
 
 1. 创建窗口 / 你好，窗口：`apps/01_getting_started/01_hello_window/`
 2. 你好，三角形：`apps/01_getting_started/02_hello_triangle/`
@@ -82,4 +99,10 @@ third_party/                 # 仅放无法通过 Conan 管理的极少数依赖
 5. 投光物：`apps/02_lighting/05_light_casters/`
 6. 多光源：`apps/02_lighting/06_multiple_lights/`
 
-每个示例先保持独立可运行；当重复代码变多时，再把窗口、Shader、纹理、相机等内容提取到 `src/opengl_lab/` 中。
+第三阶段进入模型加载：
+
+1. Assimp 导入与节点树遍历：`apps/03_model_loading/01_assimp/`
+2. Mesh 数据与 GPU 资源生命周期：`apps/03_model_loading/02_mesh/`
+3. Model 多网格、多材质与贴图回退：`apps/03_model_loading/03_model/`
+
+继续扩展时沿用独立示例结构；需要引入可复用封装时，再单独设计公共模块及其测试。
