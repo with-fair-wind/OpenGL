@@ -1,0 +1,9 @@
+# 本仓库箱子几何搭配官方砖墙颜色/法线及已有教学镜面遮罩。
+newmtl relief
+Ns 32
+Kd 1 1 1
+Ks 0.5 0.5 0.5
+map_Kd ../../textures/advanced_lighting/brickwall.jpg
+map_Ks ../../textures/container_specular.ppm
+# 本条明确存储切线空间法线，而不是标量高度。
+map_Bump ../../textures/advanced_lighting/brickwall_normal.jpg

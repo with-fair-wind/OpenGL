@@ -255,4 +255,4 @@ MSAA 在一个像素内保留多个覆盖、颜色和深度/模板样本。窗�
 
 技术核校：[英文原文](https://learnopengl.com/Advanced-OpenGL/Anti-Aliasing)、[OpenGL 3.3 Core 规范](https://registry.khronos.org/OpenGL/specs/gl/glspec33.core.pdf)、[GLSL 3.30 规范](https://registry.khronos.org/OpenGL/specs/gl/GLSLangSpec.3.30.pdf)。[GLFW 帧缓冲提示](https://www.glfw.org/docs/3.4/window_guide.html#window_hints_fb)。
 
-下一节：05 Advanced Lighting（高级光照，尚未编写）。
+下一节：[高级光照](../05_advanced_lighting/01_advanced_lighting.md)。

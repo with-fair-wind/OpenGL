@@ -39,4 +39,4 @@ flowchart LR
 
 本次在 MinGW GCC Debug / GTX 1660 上构建并运行全部 48 模式，检查截图、资源、GL 错误和文档引用。其他工具链/显卡、完整键鼠缩放交互和性能基准未实测。原教程的后视镜、反射遮罩等仍为练习，动态环境捕获仍按原文作为概念讲解，不把它们误报为程序已实现。
 
-上一章：[模型加载](../03_model_loading/README.md) · 下一章：05 Advanced Lighting（尚未编写）。
+上一章：[模型加载](../03_model_loading/README.md) · 下一章：[高级光照](../05_advanced_lighting/README.md)。

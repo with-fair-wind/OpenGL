@@ -337,3 +337,33 @@ cmake --build --preset mingw-gcc-debug --target 04_advanced_opengl__05_framebuff
 ```
 
 GLFW/GLAD 初始化、shader 编译链接、必需 uniform、缓冲映射、FBO 完整性、截图写入或帧内 OpenGL 错误会报告失败并返回非零退出码。零退出码能证明这些运行路径通过，仍应结合画面检查视觉效果；隐藏窗口运行不会替代实际键鼠和窗口缩放的交互验证。离屏 MSAA 会打印请求的采样数，实际附件是否兼容还由完整性检查确认。
+
+## 高级光照示例
+
+第 05 章沿用相同 preset 与依赖，新增 10 个独立目标、63 个启动模式。完整教程与上游对应见[章节索引](05_advanced_lighting/README.md)和[覆盖清单](05_advanced_lighting/coverage.md)。GLSL 仍内嵌，资源从编译时 `OPENGL_LAB_ASSET_ROOT` 解析，不依赖启动目录。
+
+| 示例目录 | 目标名称 | 模式数与主要观察项 |
+| --- | --- | --- |
+| `01_advanced_lighting` | `05_advanced_lighting__01_advanced_lighting` | 4：高级光照；完整编号见各篇模式表 |
+| `02_gamma_correction` | `05_advanced_lighting__02_gamma_correction` | 6：Gamma 校正；完整编号见各篇模式表 |
+| `03_shadow_mapping` | `05_advanced_lighting__03_shadow_mapping` | 11：阴影映射；完整编号见各篇模式表 |
+| `04_point_shadows` | `05_advanced_lighting__04_point_shadows` | 6：点光源阴影；完整编号见各篇模式表 |
+| `05_normal_mapping` | `05_advanced_lighting__05_normal_mapping` | 5：法线贴图；完整编号见各篇模式表 |
+| `06_parallax_mapping` | `05_advanced_lighting__06_parallax_mapping` | 6：视差贴图；完整编号见各篇模式表 |
+| `07_hdr` | `05_advanced_lighting__07_hdr` | 5：HDR；完整编号见各篇模式表 |
+| `08_bloom` | `05_advanced_lighting__08_bloom` | 5：泛光；完整编号见各篇模式表 |
+| `09_deferred_shading` | `05_advanced_lighting__09_deferred_shading` | 8：延迟着色法；完整编号见各篇模式表 |
+| `10_ssao` | `05_advanced_lighting__10_ssao` | 7：SSAO；完整编号见各篇模式表 |
+
+```powershell
+cmake --preset mingw-gcc-debug
+cmake --build --preset mingw-gcc-debug --target 05_advanced_lighting__10_ssao
+.\build\mingw-gcc-debug\apps\05_advanced_lighting\10_ssao\05_advanced_lighting__10_ssao.exe --mode 0
+.\build\mingw-gcc-debug\apps\05_advanced_lighting\09_deferred_shading\05_advanced_lighting__09_deferred_shading.exe --frames 3 --mode 7 --capture build\light_volumes.ppm
+```
+
+所有示例 Esc 退出，WASD/鼠标控制相机，滚轮缩放 FOV，空格循环模式。06_parallax_mapping 的 Q/E 减少/增加深度尺度，07_hdr 和 08_bloom 的 Q/E 调曝光。`--frames`、`--mode` 和 `--capture` 的约定与第四章一致；多配置生成器运行路径在目标目录下增加 `Debug/Release` 层。
+
+02_gamma_correction 使用明确的 GL_SRGB8_ALPHA8 离屏附件演示硬件输出编码，随后关闭 sRGB 转换并复制编码值到窗口；不假设默认后缓冲响应 GLFW sRGB 请求。09_deferred_shading 在同尺寸、同 D24S8 格式的两个自建目标之间复制深度，再画正向光源标记，最后统一输出。所有需要可变尺寸附件的目标按帧缓冲物理像素更新，最小化时暂停绘制。
+
+05_normal_mapping、09_deferred_shading 与 10_ssao 使用已有 Assimp 包；所有例子复用 stb_image。新增材质资源与切线/图片方向约定见[资源记录](../assets/chapter05_resources.md)。有限帧运行报告编译链接、必需 uniform、资源、FBO、截图和 OpenGL 错误，仍不能替代完整交互与性能验证。
