@@ -1,58 +1,96 @@
 # 深度测试
 
-| 项目 | 内容 |
+| 项目 | 信息 |
 | --- | --- |
-| 原文 | [Depth testing](https://learnopengl.com/Advanced-OpenGL/Depth-testing) |
-| 作者 | JoeyDeVries |
-| 来源 | [LearnOpenGL-CN](https://github.com/with-fair-wind/LearnOpenGL-CN/blob/new-theme/docs/04%20Advanced%20OpenGL/01%20Depth%20testing.md)，按本仓库代码整理修订 |
-| 本仓库示例 | [`apps/04_advanced_opengl/01_depth_testing/`](../../apps/04_advanced_opengl/01_depth_testing/) |
+| 原文 | [Depth-testing](https://learnopengl.com/Advanced-OpenGL/Depth-testing) |
+| 作者 | Joey de Vries |
+| 翻译 | Krasjet |
+| 校对 | 暂未校对 |
+| 中文底本 | [LearnOpenGL-CN 上游固定版本](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/04%20Advanced%20OpenGL/01%20Depth%20testing.md)，`new-theme` / `331560886468e28f28326429334fc48470f9c27b` |
+| 本仓库示例 | [`apps/04_advanced_opengl/01_depth_testing/main.cpp`](../../apps/04_advanced_opengl/01_depth_testing/main.cpp) |
+| 修订 | 按上游完整小节顺序重写，技术差异见正文；[逐项覆盖清单](coverage.md) |
 
-**深度测试回答的是“当前片段能否通过已有深度的比较”，深度写入则决定比较通过后是否更新记录。** 前面坐标系章节已经启用了它；本节把开关、比较函数、写掩码和投影深度分开解释。
+**深度测试用当前片段的深度与附件中保存的深度比较，从而决定可见性；它不按物体中心的距离排序。** 前面的相机示例已经启用深度测试，这里把比较规则、精度和可视化拆开说明。深度是窗口空间值，默认范围为 $[0,1]$，通常近处小、远处大。
 
-## 从投影到可见表面
+OpenGL 规定比较、写掩码和清除的语义，驱动实现存储和可能的提前测试；GLFW 负责请求默认窗口的深度附件，应用负责启用状态并在每帧清除。GLAD 只加载函数入口。常见深度格式包括 16/24 位定点和 32 位浮点，不能把“24 位深度”一概称为浮点缓冲。
 
 ```mermaid
 flowchart LR
-    A[观察空间位置] --> B[投影到裁剪坐标]
-    B --> C[裁剪与透视除法]
-    C --> D[NDC 深度映射到窗口深度]
-    D --> E[与深度附件比较]
-    E --> F[按写掩码更新深度与颜色]
+    A[顶点与投影] --> B[裁剪及透视除法]
+    B --> C[窗口深度 gl_FragCoord.z]
+    C --> D[与深度附件比较]
+    D --> E[通过后写颜色]
+    D --> F[写掩码允许时更新深度]
 ```
 
-OpenGL 规范定义比较与写入规则；驱动负责执行及可能的提前测试优化；GLFW 请求默认帧缓冲的附件；应用选择投影矩阵、清除时机和绘制顺序。没有深度附件时，即使启用深度测试也无法获得遮挡效果。
+启用 `GL_DEPTH_TEST` 后才进行通常的深度比较与写入。`glClear(GL_DEPTH_BUFFER_BIT)` 清除当前绘制帧缓冲的深度附件，默认清除值是 1；若深度写掩码为假，清除也会受影响。开始新帧前要恢复写掩码。`glDepthMask(GL_FALSE)` 保留比较、停止写入，适合之后的透明阶段；完全禁用测试则既不比较也不按正常深度测试路径更新附件。
 
-## 比较、清除与写入
+深度测试在概念管线中处理片段，但实现可以在不改变可观察结果时先剔除会失败的工作，即**提前深度测试**。不要写出“必定在片段着色器之后执行”或“驱动总能提前执行”的结论；写 `gl_FragDepth`、丢弃片段等会影响可用优化。
 
-`GL_LESS` 是默认比较函数：新深度必须严格小于已有深度。`GL_LEQUAL` 允许相等，后面的天空盒会用到它；`GL_ALWAYS` 始终通过，但在允许写入时仍会更新深度，不能把它与关闭测试完全等同。
+## 深度测试函数
 
-下面摘录本例初始化中的比较函数与显示模式位置缓存：
+`glDepthFunc` 设定新片段深度 $d$ 相对已有值 $D$ 的条件。默认是 `GL_LESS`；相等时不通过。
 
-```c++
-    glDepthFunc(GL_LESS);
-    const GLint depth_mode_uniform{uniform_location(program, "depth_mode")};
-    if (depth_mode_uniform < 0) {
-        return EXIT_FAILURE;
-    }
-    int depth_mode{options.initial_mode};
-    bool previous_space{false};
+| 比较函数 | 通过条件 |
+| --- | --- |
+| `GL_ALWAYS` | 恒通过 |
+| `GL_NEVER` | 恒失败 |
+| `GL_LESS` | $d < D$ |
+| `GL_EQUAL` | $d = D$ |
+| `GL_LEQUAL` | $d \le D$ |
+| `GL_GREATER` | $d > D$ |
+| `GL_NOTEQUAL` | $d \ne D$ |
+| `GL_GEQUAL` | $d \ge D$ |
+
+先画两个箱子，再画地面。模式 3 使用 `GL_ALWAYS`，地面即使更远也会覆盖箱子已经写出的片段；效果接近关闭遮挡比较，但测试仍启用时深度写入可以继续发生。
+
+![上游教学图：depth_testing_func_always.png](../img/04/01/depth_testing_func_always.png)
+
+切回模式 0 的 `GL_LESS`，地面在箱子后方的片段失败，遮挡恢复。场景中不透明物体通常无须为正确性按远近排序；从近到远提交可能有利于提前剔除，但属于性能策略。
+
+![上游教学图：depth_testing_func_less.png](../img/04/01/depth_testing_func_less.png)
+
+源码中比较函数和着色器显示模式分开设置，避免把“深度显示”误作比较规则：
+
+```cpp
+        glDepthFunc(depth_mode == 3 ? GL_ALWAYS : GL_LESS);
+        // OpenGL: 写入标量整型或布尔 uniform；sampler 接收纹理单元索引。
+        glUniform1i(depth_mode_uniform, depth_mode == 3 ? 0 : depth_mode);
 ```
 
-每帧使用 `GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT` 清除旧记录。默认清除深度为 1；若关闭了深度写入，清除深度也会受到影响，必须先恢复写掩码。关闭深度写入的透明物体仍然可以与不透明物体的深度比较，详见后面的混合一节。
+## 深度值精度
 
-> **常见误解：** 所有深度附件都是“24 位 float”。
-> **纠正：** 位宽与编码是两件事。`GL_DEPTH_COMPONENT24` 是归一化定点格式，`GL_DEPTH_COMPONENT32F` 才明确表示浮点格式。本章离屏示例使用 `GL_DEPTH24_STENCIL8`。默认窗口附件由窗口系统选定，不能仅凭请求的位数推断浮点编码。
+若把正的观察距离记为 $s=-z_{eye}$，近远平面距离为 $n,f$，理想的**线性距离归一化**为
 
-## 透视深度与可视化
+$$d_{linear}=\frac{s-n}{f-n}.$$
 
-对本例的标准透视矩阵、默认深度范围和正的观察空间前向距离 $z$，窗口深度 $d$ 满足：
+![上游教学图：depth_linear_graph.png](../img/04/01/depth_linear_graph.png)
 
-$$d=\frac{f}{f-n}-\frac{fn}{(f-n)z}$$
+但常规透视投影不是这个函数。投影矩阵给出 $z_{clip}=\frac{f+n}{f-n}s-\frac{2fn}{f-n}$、$w_{clip}=s$，透视除法得到 $z_{ndc}=z_{clip}/w_{clip}$，默认深度范围映射后为
 
-因此 $d=0.5$ 并不对应近平面和远平面的中点。把 $d$ 还原为 NDC 的 $2d-1$，再反解得到 $z$，才能直观观察线性距离。完整片段着色器逐字摘自本例：
+$$d=\frac{z_{ndc}+1}{2}=\frac{f}{f-n}-\frac{fn}{(f-n)s}.$$
 
-```c++
-constexpr const char* fragment_shader_source{R"glsl(
+代入 $s=n$ 得 0，代入 $s=f$ 得 1。它随 $1/s$ 变化，大部分数值区间集中在近处。不要混淆裁剪空间 $z_{clip}$、除法后的 $z_{ndc}$ 和附件中的窗口深度 $d$；它们有明确先后关系。
+
+![上游教学图：depth_non_linear_graph.png](../img/04/01/depth_non_linear_graph.png)
+
+曲线意味着：相同大小的定点深度量化间隔，在远处对应更大的观察距离。远处相邻表面更容易量化为相同值。场景单位由应用定义，不能把这一结论表述为 OpenGL 固定在“厘米”尺度提供何种精度。正交投影则没有相同的透视 $1/s$ 分布。
+
+## 深度缓冲的可视化
+
+片段着色器可以读 `gl_FragCoord.z` 并写成灰度。模式 1 直接显示 $d$，大部分可见表面很白，不是附件坏了，而是常规透视深度在 1 附近聚集。
+
+![上游教学图：depth_testing_visible_depth.png](../img/04/01/depth_testing_visible_depth.png)
+
+要把它变回正的观察距离，先恢复 NDC，再解出 $s$：
+
+$$z_{ndc}=2d-1,\qquad s=\frac{2nf}{f+n-z_{ndc}(f-n)}.$$
+
+模式 2 为便于显示使用 $s/f$。它是“线性距离除以远平面”，近平面显示 $n/f$，不同于前述严格映射到 $[0,1]$ 的 $(s-n)/(f-n)$；两种表达都应说明归一化方式。反算必须使用实际投影的 near/far，这里是 0.1 和 100。
+
+对应完整片段着色器源码：
+
+```glsl
 #version 330 core
 in vec3 local_pos;
 out vec4 frag_color;
@@ -74,51 +112,64 @@ void main()
         frag_color = vec4(vec3(depth), 1.0);
     }
 }
-)glsl"};
 ```
 
-空格依次切换表面颜色、原始深度和线性深度除以远平面后的灰度；背景仍使用清除颜色。线性模式在当前场景较暗，是因为物体距离远小于远平面的 100 个单位。
+![上游教学图：depth_testing_visible_linear.png](../img/04/01/depth_testing_visible_linear.png)
 
-![](../img/04/01/depth_non_linear_graph.png)
-
-上图为参考教程的透视深度示意，不是本例运行截图。
+线性显示只是把输出颜色改为深度诊断值，真正的深度比较仍使用硬件生成的窗口深度。远平面若很远，近处物体的线性灰度本来也会很暗；这和非线性图几乎全白是两个不同现象。
 
 ## 深度冲突
 
-共面或极近的表面可能落入相同的离散深度区间，出现 Z-fighting。优先避免重复共面表面，并在允许的视野范围内增大近平面距离、缩小远近平面比值；贴花等场景可以研究多边形偏移。提高格式精度也有帮助，但不能保证解决所有重叠表面问题。
+两个共面或极近的表面可能映射到相同或无法稳定区分的深度值。不同三角形的插值和舍入会使通过比较的一方交替变化，形成闪烁或条纹，称为**深度冲突**（Z-fighting）。常见触发方式是在已有地面上再放一张完全共面的面片。
 
-> **进阶（提前深度测试）：** **逻辑上的片段操作顺序不等于驱动必须采用的执行时序。** 对最终可见结果没有影响时，驱动可以提前剔除被遮挡片段，节省片段着色工作；写 `gl_FragDepth`、`discard` 等行为会影响可进行的优化。GLSL 3.30 没有通用的 `early_fragment_tests` 布局限定符，本节既不依赖提前测试，也不以固定的硬件调度顺序解释正确性。
+![上游教学图：depth_testing_z_fighting.png](../img/04/01/depth_testing_z_fighting.png)
 
-> **进阶（精度与投影）：** **本节公式只适用于这里的投影与默认深度范围。** 正交投影的深度关系不同；修改深度范围、投影矩阵或采用反向深度后，也应重新推导线性化公式。不要把深度值直接解释成欧氏距离，更不要把本例中写死的 0.1 和 100 套用到另一套相机裁剪面。
+深度冲突既不是透明混合错误，也不应靠随意改绘制顺序掩盖。即使数学上共面的两个图元，光栅化计算路径也可能不同，不能依靠逐位相等实现稳定覆盖。
+
+### 防止深度冲突
+
+1. 避免无必要的重叠共面几何。贴花可按明确策略稍作偏移，或使用适当的多边形偏移；偏移幅度与视角、深度精度有关。
+2. 在场景允许时增大近裁剪距离。由于精度分布对 near 非常敏感，near 从极小值适当调大通常很有效，但会裁掉过近的物体。合理收紧 far 也有帮助。
+3. 选择更合适的深度格式或渲染方案。更高精度能缓解量化问题，却不能自动解决真正共面的几何竞争；也不能保证所有窗口系统都会给出所请求的格式。
+
+> **常见误解：** `GL_LEQUAL` 不会消除一般深度冲突。它改变相等值的处理，仍没有增加精度，也没有给共面几何建立稳定的语义优先级。
+
+> **进阶（精度与投影）：** **near 的选择是投影设计的一部分。** 常规透视深度把精度集中到近处，near 越接近零，远处区分能力越差。先根据场景尺度选择合理裁剪范围，再考虑浮点深度和反向深度等方案。反向深度还涉及清除值、比较函数与投影约定，不能只把 `GL_LESS` 改成 `GL_GREATER`；本例继续使用 OpenGL 3.3 的常规约定。
+
+## 上游源码与附加资源
+
+以下保留底本引用的源码、资源与附加阅读入口；正文使用本仓库实现，外部旧演示与本地程序的组织可能不同。
+
+- [上游源码或资源对照](https://learnopengl.com/code_viewer_gh.php?code=src/4.advanced_opengl/1.1.depth_testing/depth_testing.cpp)
+- [这篇文章](http://www.songho.ca/opengl/gl_projectionmatrix.html)
 
 ## 本仓库示例
 
-示例源码：[`apps/04_advanced_opengl/01_depth_testing/main.cpp`](../../apps/04_advanced_opengl/01_depth_testing/main.cpp)。代码片段均原样取自此文件；原站概念图片与本例实测截图分别标明。
-
-首次安装依赖与工具链要求见[构建指南](../build.md)。已安装默认 MinGW GCC Debug 依赖时，在仓库根目录执行：
+源码：[`main.cpp`](../../apps/04_advanced_opengl/01_depth_testing/main.cpp)，目标：`04_advanced_opengl__01_depth_testing`。正文标为源码的 C++/GLSL 均直接摘取此文件；标为概念说明的独立片段用于说明规范或未启用的更高版本功能。
 
 ```powershell
 cmake --preset mingw-gcc-debug
 cmake --build --preset mingw-gcc-debug --target 04_advanced_opengl__01_depth_testing
-.\build\mingw-gcc-debug\apps\04_advanced_opengl\01_depth_testing\04_advanced_opengl__01_depth_testing.exe
+.\build\mingw-gcc-debug\apps\04_advanced_opengl\01_depth_testing\04_advanced_opengl__01_depth_testing.exe --mode 0
 ```
 
-Esc 退出；W/A/S/D 移动，鼠标转向，滚轮修改 FOV。空格切换表面颜色、原始深度和线性深度。
+依赖准备、多配置生成器与其他工具链见[构建指南](../build.md)。Esc 是退出键；除 07 的二维数据示例外，三维场景支持 WASD、鼠标与滚轮。空格按表中顺序切换（07 用启动参数选择映射方法）。有限帧检查可追加 `--frames 3 --capture output.ppm`，截图取最后一帧；它验证绘制路径，不能代替交互和视觉检查。
 
-本仓库实测截图（默认模式）：
+| `--mode` | 可观察内容 |
+| --- | --- |
+| 0 | GL_LESS 场景 |
+| 1 | 原始深度 |
+| 2 | 线性距离 / far |
+| 3 | GL_ALWAYS 对照 |
 
-![](../img/04/01/01_depth_testing.png)
-
-本章示例还支持 `--frames 3` 隐藏窗口运行指定帧数、`--mode M` 选择初始模式；配合 `--capture output.ppm` 可保存最后一帧。参数与检查方式详见[构建指南的高级 OpenGL 示例说明](../build.md#高级-opengl-示例)。
+![本仓库模式 0 实测截图](../img/04/01/01_depth_testing.png)
 
 ## 本章整体回顾
 
-- **局部**：将投影得到的窗口深度与附件比较，由清除和写掩码维护后续比较的基础。
-- **整体**：深度比较为后续模板、透明和离屏场景提供遮挡基础。
+深度附件保存已通过片段的深度；比较、写入与清除是不同操作。透视深度的非线性来自投影与透视除法，原始深度不能直接当作线性距离；理解精度分布后再处理深度冲突。
 
-## 核校参考
+本篇承接前一篇，正文保留底本对应的小节与主案例。图片中的背包、箱子等属于上游演示，本仓库使用独立注明的教学场景；本仓库截图与上游图分开标注。图片出处见[资源记录](../img/04/README.md)，对应关系与验证边界见[覆盖清单](coverage.md)。
 
-- [OpenGL 3.3 Core 规范](https://registry.khronos.org/OpenGL/specs/gl/glspec33.core.pdf)：深度测试、写掩码及深度附件格式。
-- [GLSL 3.30 规范](https://registry.khronos.org/OpenGL/specs/gl/GLSLangSpec.3.30.pdf)：阶段输入输出、内建变量及本例使用的语言语义。
+技术核校：[英文原文](https://learnopengl.com/Advanced-OpenGL/Depth-testing)、[OpenGL 3.3 Core 规范](https://registry.khronos.org/OpenGL/specs/gl/glspec33.core.pdf)、[GLSL 3.30 规范](https://registry.khronos.org/OpenGL/specs/gl/GLSLangSpec.3.30.pdf)。
 
-下一节：[模板测试](02_stencil_testing.md)
+下一节：[模板测试](02_stencil_testing.md)。

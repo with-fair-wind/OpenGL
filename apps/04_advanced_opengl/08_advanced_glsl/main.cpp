@@ -8,10 +8,14 @@
 #include <array>
 #include <charconv>
 #include <cmath>
+#include <cstddef>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <memory>
+#include <random>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -176,6 +180,15 @@ GLuint create_vertex_array(gpu_resources& resources, const float* data, GLsizeip
     return vao;
 }
 
+/** @brief 按键按下边沿触发一次，避免按住时每帧来回切换。 */
+bool key_pressed(GLFWwindow* window, int key, bool& previous) {
+    // GLFW: 查询 GLFW 缓存的按键状态。
+    const bool down{glfwGetKey(window, key) == GLFW_PRESS};
+    const bool pressed{down && !previous};
+    previous = down;
+    return pressed;
+}
+
 /** @brief 记录 OpenGL 错误，并按需在交换前读取默认后缓冲保存 PPM。 */
 bool finish_frame(GLFWwindow* window, const run_options& options, int frame, int width,
                   int height) {
@@ -253,7 +266,6 @@ void scroll_callback(GLFWwindow*, double, double offset) {
 void process_input(GLFWwindow* window, float delta_time) {
     const float speed{3.0F * std::min(delta_time, 0.1F)};
     const glm::vec3 right{glm::normalize(glm::cross(camera_front, camera_up))};
-    // GLFW: 查询 GLFW 缓存的按键状态。
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
         camera_position += speed * camera_front;
     }
@@ -286,12 +298,14 @@ layout (std140) uniform Matrices {
     mat4 view;
 };
 uniform mat4 model;
+uniform int demo_mode;
 out VertexData {
     vec3 local_pos;
 } vertex_out;
 void main()
 {
     vertex_out.local_pos = a_pos;
+    gl_PointSize = 5.0 + float(gl_VertexID % 8);
     gl_Position = projection * view * model * vec4(a_pos, 1.0);
 }
 )glsl"};
@@ -300,10 +314,15 @@ constexpr const char* fragment_shader_source{R"glsl(
 in VertexData {
     vec3 local_pos;
 } fragment_in;
+uniform int demo_mode;
+uniform float frame_width;
 out vec4 frag_color;
 void main()
 {
     vec3 color = vec3(1.0, 0.35, 0.2);
+    if (demo_mode == 2) color = gl_FragCoord.x < frame_width * 0.5 ? vec3(1,0,0) : vec3(0,1,0);
+    if (demo_mode == 3) color = gl_FrontFacing ? vec3(1,0.5,0.1) : vec3(0.1,0.7,1);
+    gl_FragDepth = demo_mode == 4 ? 0.5 : gl_FragCoord.z;
     frag_color = vec4(color * (0.7 + 0.3 * abs(fragment_in.local_pos.y) * 2.0), 1.0);
 }
 )glsl"};
@@ -312,10 +331,49 @@ constexpr const char* second_fragment_source{R"glsl(
 in VertexData {
     vec3 local_pos;
 } fragment_in;
+uniform int demo_mode;
+uniform float frame_width;
 out vec4 frag_color;
 void main()
 {
     vec3 color = vec3(0.15, 0.65, 0.95);
+    if (demo_mode == 2) color = gl_FragCoord.x < frame_width * 0.5 ? vec3(1,0,0) : vec3(0,1,0);
+    if (demo_mode == 3) color = gl_FrontFacing ? vec3(1,0.5,0.1) : vec3(0.1,0.7,1);
+    gl_FragDepth = demo_mode == 4 ? 0.5 : gl_FragCoord.z;
+    frag_color = vec4(color * (0.7 + 0.3 * abs(fragment_in.local_pos.y) * 2.0), 1.0);
+}
+)glsl"};
+constexpr const char* third_fragment_source{R"glsl(
+#version 330 core
+in VertexData {
+    vec3 local_pos;
+} fragment_in;
+uniform int demo_mode;
+uniform float frame_width;
+out vec4 frag_color;
+void main()
+{
+    vec3 color = vec3(0.2, 0.9, 0.3);
+    if (demo_mode == 2) color = gl_FragCoord.x < frame_width * 0.5 ? vec3(1,0,0) : vec3(0,1,0);
+    if (demo_mode == 3) color = gl_FrontFacing ? vec3(1,0.5,0.1) : vec3(0.1,0.7,1);
+    gl_FragDepth = demo_mode == 4 ? 0.5 : gl_FragCoord.z;
+    frag_color = vec4(color * (0.7 + 0.3 * abs(fragment_in.local_pos.y) * 2.0), 1.0);
+}
+)glsl"};
+constexpr const char* fourth_fragment_source{R"glsl(
+#version 330 core
+in VertexData {
+    vec3 local_pos;
+} fragment_in;
+uniform int demo_mode;
+uniform float frame_width;
+out vec4 frag_color;
+void main()
+{
+    vec3 color = vec3(0.9, 0.8, 0.2);
+    if (demo_mode == 2) color = gl_FragCoord.x < frame_width * 0.5 ? vec3(1,0,0) : vec3(0,1,0);
+    if (demo_mode == 3) color = gl_FrontFacing ? vec3(1,0.5,0.1) : vec3(0.1,0.7,1);
+    gl_FragDepth = demo_mode == 4 ? 0.5 : gl_FragCoord.z;
     frag_color = vec4(color * (0.7 + 0.3 * abs(fragment_in.local_pos.y) * 2.0), 1.0);
 }
 )glsl"};
@@ -324,13 +382,15 @@ void main()
 int run(GLFWwindow* window, const run_options& options) {
     gpu_resources resources{};
 
-    const std::array<GLuint, 2> programs{
+    const std::array<GLuint, 4> programs{
         create_program(resources, vertex_shader_source, fragment_shader_source),
-        create_program(resources, vertex_shader_source, second_fragment_source)};
-    if (programs[0] == 0U || programs[1] == 0U) {
+        create_program(resources, vertex_shader_source, second_fragment_source),
+        create_program(resources, vertex_shader_source, third_fragment_source),
+        create_program(resources, vertex_shader_source, fourth_fragment_source)};
+    if (std::any_of(programs.begin(), programs.end(), [](GLuint p) { return p == 0U; })) {
         return EXIT_FAILURE;
     }
-    std::array<GLint, 2> model_uniforms{};
+    std::array<GLint, 4> model_uniforms{};
     for (std::size_t index{0U}; index < programs.size(); ++index) {
         // OpenGL: 查询 program 内的活动 uniform 块索引，失败为 GL_INVALID_INDEX。
         const GLuint block{glGetUniformBlockIndex(programs[index], "Matrices")};
@@ -357,6 +417,10 @@ int run(GLFWwindow* window, const run_options& options) {
     // OpenGL: 启用当前示例所需的固定功能状态。
     glEnable(GL_DEPTH_TEST);
 
+    int mode{options.initial_mode};
+    bool previous_space{false};
+    glEnable(GL_PROGRAM_POINT_SIZE);
+
     int frame{0};
     // GLFW: 取得单调计时器秒数，用于计算帧间隔。
     double last_frame_time{glfwGetTime()};
@@ -381,6 +445,9 @@ int run(GLFWwindow* window, const run_options& options) {
         // OpenGL: 设置之后清除颜色缓冲使用的值。
         glClearColor(0.045F, 0.06F, 0.09F, 1.0F);
 
+        if (key_pressed(window, GLFW_KEY_SPACE, previous_space)) {
+            mode = (mode + 1) % 5;
+        }
         // OpenGL: 清除已绑定绘制帧缓冲；清除受相关写掩码限制。
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         const glm::mat4 projection{
@@ -397,12 +464,22 @@ int run(GLFWwindow* window, const run_options& options) {
         for (std::size_t index{0U}; index < programs.size(); ++index) {
             // OpenGL: 后续 uniform 更新和绘制使用此程序。
             glUseProgram(programs[index]);
+            const GLint mode_uniform{uniform_location(programs[index], "demo_mode")};
+            const GLint width_uniform{uniform_location(programs[index], "frame_width")};
+            if (mode_uniform < 0 || width_uniform < 0) {
+                return EXIT_FAILURE;
+            }
+            // OpenGL: 写入标量整型或布尔 uniform；sampler 接收纹理单元索引。
+            // OpenGL: 写入浮点 uniform；与当前活动 program 的类型一致。
+            glUniform1i(mode_uniform, mode);
+            glUniform1f(width_uniform, static_cast<float>(width));
             const glm::mat4 model{
-                glm::translate(glm::mat4{1.0F}, {index == 0U ? -0.8F : 0.8F, 0.0F, 0.0F})};
+                glm::translate(glm::mat4{1.0F},
+                               {index % 2U == 0U ? -0.8F : 0.8F, index < 2U ? 0.7F : -0.7F, 0.0F})};
             // OpenGL: GLM 按列存储矩阵，GL_FALSE 表示不转置。
             glUniformMatrix4fv(model_uniforms[index], 1, GL_FALSE, glm::value_ptr(model));
             // OpenGL: 按照当前 VAO 和程序解释顶点并提交图元。
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+            glDrawArrays(mode == 1 ? GL_POINTS : GL_TRIANGLES, 0, 36);
         }
         ++frame;
         if (!finish_frame(window, options, frame, width, height)) {
@@ -433,8 +510,8 @@ int main(int argc, char** argv) {
             const auto [end, error]{
                 std::from_chars(value.data(), value.data() + value.size(), options.initial_mode)};
             if (error != std::errc{} || end != value.data() + value.size() ||
-                options.initial_mode < 0 || options.initial_mode >= 1) {
-                std::cerr << "--mode must be in [0, " << 1 - 1 << "]\n";
+                options.initial_mode < 0 || options.initial_mode >= 5) {
+                std::cerr << "--mode must be in [0, " << 5 - 1 << "]\n";
                 return EXIT_FAILURE;
             }
         } else if (argument == "--capture" && index + 1 < argc) {

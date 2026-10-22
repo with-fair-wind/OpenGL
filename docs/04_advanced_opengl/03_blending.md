@@ -1,120 +1,224 @@
 # 混合
 
-| 项目 | 内容 |
+| 项目 | 信息 |
 | --- | --- |
 | 原文 | [Blending](https://learnopengl.com/Advanced-OpenGL/Blending) |
-| 作者 | JoeyDeVries |
-| 来源 | [LearnOpenGL-CN](https://github.com/with-fair-wind/LearnOpenGL-CN/blob/new-theme/docs/04%20Advanced%20OpenGL/03%20Blending.md)，按本仓库代码整理修订 |
-| 本仓库示例 | [`apps/04_advanced_opengl/03_blending/`](../../apps/04_advanced_opengl/03_blending/) |
+| 作者 | Joey de Vries |
+| 翻译 | Krasjet, [Django](http://bullteacher.com/) |
+| 校对 | 暂无校对 |
+| 中文底本 | [LearnOpenGL-CN 上游固定版本](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/04%20Advanced%20OpenGL/03%20Blending.md)，`new-theme` / `331560886468e28f28326429334fc48470f9c27b` |
+| 本仓库示例 | [`apps/04_advanced_opengl/03_blending/main.cpp`](../../apps/04_advanced_opengl/03_blending/main.cpp) |
+| 修订 | 按上游完整小节顺序重写，技术差异见正文；[逐项覆盖清单](coverage.md) |
 
-**透明效果需要同时协调片段保留、颜色混合、绘制顺序和深度写入；仅输出小于 1 的 alpha 并不会自动透明。** 本例用数学圆形演示镂空，用三个半透明平面演示颜色叠加，核心机制与使用 RGBA 纹理一致。
+**alpha 表示覆盖或透明程度的数据；只有应用选择的丢弃、混合和深度策略，才能把它变成预期的图像。** 窗口、草叶、烟雾等都可能使用 alpha，但草叶的空白背景与玻璃的连续透光需要不同处理。
 
-## 两条不同的路径
+![上游教学图：blending_transparency.png](../img/04/03/blending_transparency.png)
+
+![上游教学图：blending_transparent_window.png](../img/04/03/blending_transparent_window.png)
+
+PNG 等格式可保存 alpha，JPEG 一般没有这个通道。本例由 stb_image 解码为 RGBA 并上传 `GL_RGBA8`，保留每个纹素的透明信息；不把整张图乘同一个固定透明度来替代贴图。GLFW 创建窗口，OpenGL 定义采样、片段和混合状态，驱动执行，应用决定绘制顺序。
 
 ```mermaid
 flowchart LR
-    A[片段颜色与 alpha] --> B{镂空还是半透明}
-    B --> C[镂空区域 discard]
-    C --> D[其余片段正常写深度]
-    B --> E[不透明物体先绘制]
-    E --> F[透明物体从远到近]
-    F --> G[保留深度比较 关闭深度写入]
-    G --> H[混合到颜色附件]
+    A[RGBA 纹理采样] --> B{材质语义}
+    B -->|二值草叶| C[alpha 阈值 discard]
+    B -->|连续玻璃| D[先不透明 后排序透明]
+    C --> E[深度比较及写入]
+    D --> F[保留深度比较 关闭透明深度写入]
+    F --> G[源目标颜色混合]
 ```
 
-应用决定顺序、alpha 语义和状态；着色器输出源颜色；OpenGL 固定功能混合阶段读取颜色附件中的目标值并合成；驱动不会自动判断玻璃应位于哪一层。alpha 可以表示不透明程度或覆盖率等约定，单个分量不能完整描述真实介质的吸收与折射。
+## 丢弃片段
 
-## 镂空：丢弃而非混合
+草叶可以放在简单矩形上，颜色由纹理给出，矩形外的背景 alpha 为零。这样用很少的三角形即可表达复杂边缘。先像普通纹理一样画五个四边形，模式 2 不丢弃任何片段，矩形透明背景仍产生颜色和深度写入，得到明显的矩形块。
 
-叶片边缘、围栏孔洞这类二值可见区域，通常不需要半透明叠加。本例在局部 XY 平面上用半径阈值代替 alpha 贴图：
+![上游教学图：grass.png](../img/04/03/grass.png)
 
-```c++
-constexpr const char* fragment_shader_source{R"glsl(
+![上游教学图：blending_no_discard.png](../img/04/03/blending_no_discard.png)
+
+在片段程序里检查采样 alpha，小于 0.1 就 `discard`。被丢弃的片段不会按通常路径写颜色和深度，草叶内部则按不透明片段参与遮挡。模式 3 对应这个案例。完整片段着色器摘录如下，`surface_mode` 把普通场景、直接采样和阈值丢弃分开：
+
+```glsl
 #version 330 core
 in vec3 local_pos;
 out vec4 frag_color;
 uniform vec4 object_color;
-uniform bool cutout;
+uniform sampler2D surface_texture;
+uniform int surface_mode;
 void main()
 {
-    if (cutout && length(local_pos.xy) > 0.48) discard;
+    if (surface_mode != 0) {
+        vec4 sampled = texture(surface_texture, vec2(local_pos.x + 0.5, 0.5 - local_pos.y));
+        if (surface_mode == 2 && sampled.a < 0.1) discard;
+        frag_color = sampled;
+        return;
+    }
     float pattern = mod(floor((local_pos.x + 0.5) * 8.0) +
                         floor((local_pos.z + 0.5) * 8.0), 2.0);
     frag_color = vec4(object_color.rgb * mix(0.72, 1.0, pattern), object_color.a);
 }
-)glsl"};
 ```
 
-圆外片段被 `discard`，不会通过后续常规路径写入颜色与深度。若改为输出 alpha=0 却继续写深度，后面的物体仍可能被挡住。实际 RGBA 图片还需要处理采样插值与边缘颜色，`GL_CLAMP_TO_EDGE` 能避免重复环绕引入另一端边缘，但不能解决所有透明边缘问题。
+![上游教学图：blending_discard.png](../img/04/03/blending_discard.png)
 
-## 非预乘 alpha 的混合
+阈值可调，线性过滤会使边缘 alpha 连续变化。此法适合只有“有 / 无”的覆盖，不适合需要保留多级透明度的玻璃。UV 本例由局部矩形坐标得到，并在 y 方向匹配图像行顺序；图片加载不依赖全局垂直翻转。
 
-本例 RGB 采用 $C_o=\alpha_s C_s+(1-\alpha_s)C_d$，alpha 采用 $\alpha_o=\alpha_s+(1-\alpha_s)\alpha_d$。因此用 `glBlendFuncSeparate` 分开配置 RGB 与 alpha 系数。预乘 alpha 数据已经把 RGB 乘过 alpha，需要相应使用源系数 `GL_ONE`，不可重复相乘。
+> **译注与修订（边缘采样）：** 草图边界外应使用边缘纹素，避免默认 `GL_REPEAT` 把另一侧颜色混进来。本例两轴设为 `GL_CLAMP_TO_EDGE`。纹理自身透明像素的 RGB 仍可能影响过滤，资源制作和预乘处理也是消除边缘色晕的因素。
 
-## 透明排序与深度写入
+对应加载函数检查失败路径，用 RAII 释放 CPU 图像，上传后设置过滤与环绕：
 
-先绘制不透明场景和镂空圆，再把透明平面从远到近排序。保留深度比较，防止玻璃盖住前方不透明物体；关闭深度写入，避免前方玻璃阻断其它透明层。实际排序与混合代码如下：
+```cpp
+GLuint load_texture(gpu_resources& resources, const char* relative) {
+    const auto path{asset_path(relative)};
+    int width{0};
+    int height{0};
+    int channels{0};
+    const std::unique_ptr<unsigned char, stbi_image_deleter> pixels{
+        stbi_load(path.string().c_str(), &width, &height, &channels, STBI_rgb_alpha)};
+    if (!pixels) {
+        std::cerr << "Texture load failed: " << path << '\n';
+        return 0U;
+    }
+    GLuint texture{0U};
+    // OpenGL: 创建纹理对象名称。
+    glGenTextures(1, &texture);
+    resources.textures.push_back(texture);
+    // OpenGL: 绑定纹理到当前活动纹理单元的指定目标。
+    glBindTexture(GL_TEXTURE_2D, texture);
+    // OpenGL: 定义纹理图像存储；空指针仅分配空间。
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                 pixels.get());
+    // OpenGL: 配置纹理过滤与环绕状态。
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    return texture;
+}
+```
 
-```c++
-        std::stable_sort(panes.begin(), panes.end(), [](const pane& left, const pane& right) {
-            return glm::dot(camera_position - left.position, camera_position - left.position) >
-                   glm::dot(camera_position - right.position, camera_position - right.position);
-        });
-        glEnable(GL_BLEND);
-        // OpenGL: 分别设置 RGB 与 alpha 的源/目标系数。
-        glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-        // OpenGL: 只控制深度写入，不关闭深度比较。
-        glDepthMask(GL_FALSE);
-        for (const pane& item : panes) {
-            model = glm::scale(glm::translate(glm::mat4{1.0F}, item.position), glm::vec3{1.6F});
+## 混合
+
+半透明表面需要把新片段颜色（**源** $C_s$）与当前颜色附件已有值（**目标** $C_d$）组合。混合默认禁用，启用 `GL_BLEND` 后由方程和系数控制，默认方程为加法：
+
+$$C_{out}=C_sF_s+C_dF_d.$$
+
+![上游教学图：blending_equation.png](../img/04/03/blending_equation.png)
+
+对于非预乘 alpha，常见 RGB 系数是 $F_s=\alpha_s$、$F_d=1-\alpha_s$。红色源 `(1,0,0,0.5)` 覆盖蓝色目标 `(0,0,1,1)`，RGB 得 `(0.5,0,0.5)`。源与目标来自当前片段和附件，不表示固定的某两个物体。
+
+![上游教学图：blending_equation_mixed.png](../img/04/03/blending_equation_mixed.png)
+
+`glBlendFunc` 给 RGB 和 alpha 选同一对系数；`glBlendFuncSeparate` 分开指定。下表记常量颜色为 $C_c$，常量 alpha 为 $\alpha_c$，常量由 `glBlendColor` 设置。颜色因子按分量计算，alpha 分量有相应规则。
+
+| 因子 | RGB 因子含义 |
+| --- | --- |
+| `GL_ZERO` / `GL_ONE` | 0 / 1 |
+| `GL_SRC_COLOR` / `GL_ONE_MINUS_SRC_COLOR` | $C_s$ / $1-C_s$ |
+| `GL_DST_COLOR` / `GL_ONE_MINUS_DST_COLOR` | $C_d$ / $1-C_d$ |
+| `GL_SRC_ALPHA` / `GL_ONE_MINUS_SRC_ALPHA` | $\alpha_s$ / $1-\alpha_s$ |
+| `GL_DST_ALPHA` / `GL_ONE_MINUS_DST_ALPHA` | $\alpha_d$ / $1-\alpha_d$ |
+| `GL_CONSTANT_COLOR` / `GL_ONE_MINUS_CONSTANT_COLOR` | $C_c$ / $1-C_c$ |
+| `GL_CONSTANT_ALPHA` / `GL_ONE_MINUS_CONSTANT_ALPHA` | $\alpha_c$ / $1-\alpha_c$ |
+| `GL_SRC_ALPHA_SATURATE` | RGB 用 $\min(\alpha_s,1-\alpha_d)$，alpha 因子为 1；用于源因子 |
+
+例如普通 `glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)` 会让输出 alpha 也按 $\alpha_s^2+\alpha_d(1-\alpha_s)$ 计算。若希望保留通常的 source-over 覆盖 alpha，应分开用 `GL_ONE, GL_ONE_MINUS_SRC_ALPHA`，得到 $\alpha_s+\alpha_d(1-\alpha_s)$。底本的 `GL_ONE, GL_ZERO` 方案则直接把 alpha 改成源 alpha，是另一种目标，不能称为通用透明合成。
+
+`glBlendEquation` 改变合成方式：
+
+| 方程 | 结果 |
+| --- | --- |
+| `GL_FUNC_ADD` | $C_sF_s+C_dF_d$ |
+| `GL_FUNC_SUBTRACT` | $C_sF_s-C_dF_d$ |
+| `GL_FUNC_REVERSE_SUBTRACT` | $C_dF_d-C_sF_s$ |
+| `GL_MIN` / `GL_MAX` | 逐分量最小 / 最大，忽略混合系数 |
+
+## 渲染半透明纹理
+
+换用玻璃纹理，保留采样 alpha，启用混合，不再对低 alpha 直接丢弃。四边形顶点和 UV 生成方式与草叶相同。模式 1 先按数组原顺序绘制，并让透明片段写深度，用来观察问题：前方窗口即使 alpha 为零或很小，也可能先写深度，使后方窗口再也无法贡献颜色。
+
+![上游教学图：blending_incorrect_order.png](../img/04/03/blending_incorrect_order.png)
+
+深度测试不知道“看起来透明”，它仍按片段深度比较。只开混合不会取消深度写入。反过来，完全关闭深度测试又会使玻璃覆盖本应挡住它的不透明物体，因此需要同时安排比较、写入与顺序。
+
+## 不要打乱顺序
+
+加权透明合成通常不满足交换律。先混合 A 后混合 B，与反过来做的目标颜色不同。推荐的基础流程是：先绘制全部不透明物体（包括完成二值丢弃的草叶），然后把半透明几何按远到近排列，保留深度测试、关闭深度写入，最后恢复状态。
+
+本例模式 0 每帧依据相机到各窗口中心的距离平方进行稳定排序，再绘制玻璃。平方距离避免不必要的开方；使用数组排序而不是 `map<float,position>`，防止等距离对象被相同键覆盖。关键源码：
+
+```cpp
+        std::array<glm::vec3, 5> sorted{positions};
+        if (mode == 0) {
+            std::stable_sort(sorted.begin(), sorted.end(), [](const auto& left, const auto& right) {
+                return glm::dot(camera_position - left, camera_position - left) >
+                       glm::dot(camera_position - right, camera_position - right);
+            });
+        }
+        // OpenGL: 选择纹理单元；sampler uniform 中填写相应的零起始索引。
+        glBindVertexArray(quad);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, mode >= 2 ? grass : glass);
+        glUniform1i(surface_texture, 0);
+        glUniform1i(surface_mode, mode == 3 ? 2 : 1);
+        if (mode < 2) {
+            glEnable(GL_BLEND);
+            // OpenGL: 分别设置 RGB 与 alpha 的源/目标系数。
+            glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE,
+                                GL_ONE_MINUS_SRC_ALPHA);
+            glDepthMask(mode == 0 ? GL_FALSE : GL_TRUE);
+        }
+        for (const auto& position : sorted) {
+            const glm::mat4 model{glm::translate(glm::mat4{1.0F}, position)};
             glUniformMatrix4fv(uniforms.model, 1, GL_FALSE, glm::value_ptr(model));
-            glUniform4fv(uniforms.color, 1, glm::value_ptr(item.color));
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
         glDepthMask(GL_TRUE);
-        // OpenGL: 关闭指定状态；多阶段绘制结束后恢复下一阶段的前置条件。
-        glDisable(GL_BLEND);
 ```
 
-`stable_sort` 会保留等距离元素，不会像“浮点距离作为唯一 map 键”的方法那样覆盖同距离物体。平面颜色来自 uniform，没有加载参考教程的草或玻璃纹理。
+![上游教学图：blending_sorted.png](../img/04/03/blending_sorted.png)
 
-![](../img/04/03/blending_sorted.png)
+这种排序对于分离、近似平行的窗口有效，但按中心排序不是所有透明几何的精确解：相交表面可能互相穿插，细长表面的中心距离也不能代表每个像素的前后关系。更精确的方法需要拆分图元或采用深度剥离等顺序无关透明技术；这里保留底本的限制说明，不把中心排序说成通用算法。透明粒子、玻璃和植被也可能需要不同材质策略。
 
-上图是原教程贴图玻璃的排序效果；本仓库截图见下方示例小节。
+> **常见误解：** alpha 等于 0 不会自动执行 discard，也不会自动禁止深度写入；片段着色器、固定功能混合和深度附件是三个独立环节。
 
-> **常见误解：** 关闭深度测试就能解决所有透明排序。
-> **纠正：** 那会让本来被墙挡住的透明面也覆盖到墙上。通常需要的是保留与不透明深度的比较，同时禁止透明面更新深度；颜色合成的顺序仍由应用负责。
+> **进阶（预乘 alpha）：** **纹理与混合系数必须采用同一约定。** 本例的 RGB 尚未乘 alpha，使用源 RGB 因子 `GL_SRC_ALPHA`。预乘纹理已保存 $C\alpha$，通常改用 `GL_ONE` 与 `GL_ONE_MINUS_SRC_ALPHA`，避免再乘一次。预乘还能改善某些过滤边缘，但不能消除绘制顺序问题；颜色空间和离屏目标 alpha 的含义也应一起约定。
 
-> **进阶（排序的边界）：** **按物体中心距离排序只是近似方案。** 相交几何、大面积斜面或互相穿插的透明表面，可能不存在一个按对象排列就正确的顺序；本例也不宣称任意视角下都能正确处理这类情况。工程上可按三角形拆分排序，或研究深度剥离、加权混合等顺序无关透明方法，并评估其内存与质量取舍。
+## 上游源码与附加资源
+
+以下保留底本引用的源码、资源与附加阅读入口；正文使用本仓库实现，外部旧演示与本地程序的组织可能不同。
+
+- [Django](http://bullteacher.com/)
+- [上游源码或资源对照](https://learnopengl.com/code_viewer_gh.php?code=src/4.advanced_opengl/3.1.blending_discard/blending_discard.cpp)
+- [上游源码或资源对照](https://learnopengl.com/code_viewer_gh.php?code=src/4.advanced_opengl/3.2.blending_sort/blending_sorted.cpp)
 
 ## 本仓库示例
 
-示例源码：[`apps/04_advanced_opengl/03_blending/main.cpp`](../../apps/04_advanced_opengl/03_blending/main.cpp)。代码片段均原样取自此文件；原站概念图片与本例实测截图分别标明。
-
-首次安装依赖与工具链要求见[构建指南](../build.md)。已安装默认 MinGW GCC Debug 依赖时，在仓库根目录执行：
+源码：[`main.cpp`](../../apps/04_advanced_opengl/03_blending/main.cpp)，目标：`04_advanced_opengl__03_blending`。正文标为源码的 C++/GLSL 均直接摘取此文件；标为概念说明的独立片段用于说明规范或未启用的更高版本功能。
 
 ```powershell
 cmake --preset mingw-gcc-debug
 cmake --build --preset mingw-gcc-debug --target 04_advanced_opengl__03_blending
-.\build\mingw-gcc-debug\apps\04_advanced_opengl\03_blending\04_advanced_opengl__03_blending.exe
+.\build\mingw-gcc-debug\apps\04_advanced_opengl\03_blending\04_advanced_opengl__03_blending.exe --mode 0
 ```
 
-Esc 退出；W/A/S/D 移动，鼠标转向，滚轮修改 FOV。
+依赖准备、多配置生成器与其他工具链见[构建指南](../build.md)。Esc 是退出键；除 07 的二维数据示例外，三维场景支持 WASD、鼠标与滚轮。空格按表中顺序切换（07 用启动参数选择映射方法）。有限帧检查可追加 `--frames 3 --capture output.ppm`，截图取最后一帧；它验证绘制路径，不能代替交互和视觉检查。
 
-本仓库实测截图（默认模式）：
+| `--mode` | 可观察内容 |
+| --- | --- |
+| 0 | 排序玻璃，关闭深度写入 |
+| 1 | 未排序玻璃，保留深度写入 |
+| 2 | 草纹理，不丢弃 |
+| 3 | 草纹理，alpha 丢弃 |
 
-![](../img/04/03/03_blending.png)
-
-本章示例还支持 `--frames 3` 隐藏窗口运行指定帧数、`--mode M` 选择初始模式；配合 `--capture output.ppm` 可保存最后一帧。参数与检查方式详见[构建指南的高级 OpenGL 示例说明](../build.md#高级-opengl-示例)。
+![本仓库模式 0 实测截图](../img/04/03/03_blending.png)
 
 ## 本章整体回顾
 
-- **局部**：分别控制镂空丢弃、透明排序、颜色混合与深度写入。
-- **整体**：透明需要着色器输出与固定功能状态配合，下一节进一步减少无用图元。
+透明贴图需要先区分二值覆盖与连续半透明。前者用 discard，后者用混合；混合系数、绘制顺序、深度比较与深度写入共同决定结果，alpha 不会自动解决遮挡。
 
-## 核校参考
+本篇承接前一篇，正文保留底本对应的小节与主案例。图片中的背包、箱子等属于上游演示，本仓库使用独立注明的教学场景；本仓库截图与上游图分开标注。图片出处见[资源记录](../img/04/README.md)，对应关系与验证边界见[覆盖清单](coverage.md)。
 
-- [OpenGL 3.3 Core 规范](https://registry.khronos.org/OpenGL/specs/gl/glspec33.core.pdf)：混合系数、深度写入和片段操作。
-- [GLSL 3.30 规范](https://registry.khronos.org/OpenGL/specs/gl/GLSLangSpec.3.30.pdf)：阶段输入输出、内建变量及本例使用的语言语义。
+技术核校：[英文原文](https://learnopengl.com/Advanced-OpenGL/Blending)、[OpenGL 3.3 Core 规范](https://registry.khronos.org/OpenGL/specs/gl/glspec33.core.pdf)、[GLSL 3.30 规范](https://registry.khronos.org/OpenGL/specs/gl/GLSLangSpec.3.30.pdf)。
 
-下一节：[面剔除](04_face_culling.md)
+下一节：[面剔除](04_face_culling.md)。

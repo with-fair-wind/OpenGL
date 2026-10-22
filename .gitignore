@@ -6,6 +6,8 @@
 *.lo
 *.o
 *.obj
+# Wavefront model files are source assets, not compiler object files.
+!assets/models/**/*.obj
 
 # Precompiled Headers
 *.gch

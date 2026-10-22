@@ -8,10 +8,14 @@
 #include <array>
 #include <charconv>
 #include <cmath>
+#include <cstddef>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <memory>
+#include <random>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -247,8 +251,12 @@ int run(GLFWwindow* window, const run_options& options) {
     resources.buffers.push_back(staging);
     glBindBuffer(GL_COPY_READ_BUFFER, staging);
     glBufferData(GL_COPY_READ_BUFFER, sizeof(colors), nullptr, GL_STATIC_DRAW);
-    // OpenGL: 映射指定范围；使用前必须检查返回指针。
-    void* mapped{glMapBufferRange(GL_COPY_READ_BUFFER, 0, sizeof(colors), GL_MAP_WRITE_BIT)};
+    void* mapped{options.initial_mode == 0 ?
+                                           // OpenGL: 映射指定范围；使用前必须检查返回指针。
+                     glMapBufferRange(GL_COPY_READ_BUFFER, 0, sizeof(colors), GL_MAP_WRITE_BIT)
+                                           :
+                                           // OpenGL: 映射整个已分配缓冲，解除映射前检查返回指针。
+                     glMapBuffer(GL_COPY_READ_BUFFER, GL_WRITE_ONLY)};
     if (mapped == nullptr) {
         std::cerr << "Buffer mapping failed\n";
         return EXIT_FAILURE;
@@ -325,8 +333,8 @@ int main(int argc, char** argv) {
             const auto [end, error]{
                 std::from_chars(value.data(), value.data() + value.size(), options.initial_mode)};
             if (error != std::errc{} || end != value.data() + value.size() ||
-                options.initial_mode < 0 || options.initial_mode >= 1) {
-                std::cerr << "--mode must be in [0, " << 1 - 1 << "]\n";
+                options.initial_mode < 0 || options.initial_mode >= 2) {
+                std::cerr << "--mode must be in [0, " << 2 - 1 << "]\n";
                 return EXIT_FAILURE;
             }
         } else if (argument == "--capture" && index + 1 < argc) {

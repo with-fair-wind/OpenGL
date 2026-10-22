@@ -8,10 +8,14 @@
 #include <array>
 #include <charconv>
 #include <cmath>
+#include <cstddef>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <memory>
+#include <random>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -352,13 +356,6 @@ void draw_cube(const scene_uniforms& uniforms, const glm::vec3& position, const 
     glDrawArrays(GL_TRIANGLES, 0, 36);
 }
 
-/** @brief 地板与两个立方体用于观察遮挡、后处理和多重采样。 */
-void draw_scene(const scene_uniforms& uniforms) {
-    draw_cube(uniforms, {0.0F, -0.85F, 0.0F}, {6.0F, 0.1F, 6.0F}, {0.25F, 0.3F, 0.4F, 1.0F});
-    draw_cube(uniforms, {-0.8F, -0.25F, 0.0F}, {1.0F, 1.0F, 1.0F}, {1.0F, 0.48F, 0.2F, 1.0F});
-    draw_cube(uniforms, {0.8F, -0.25F, -1.3F}, {1.0F, 1.0F, 1.0F}, {0.15F, 0.7F, 0.85F, 1.0F});
-}
-
 /** @brief 在当前有效上下文内创建资源并运行渲染循环。 */
 int run(GLFWwindow* window, const run_options& options) {
     gpu_resources resources{};
@@ -421,13 +418,17 @@ int run(GLFWwindow* window, const run_options& options) {
         glUniformMatrix4fv(uniforms.projection, 1, GL_FALSE, glm::value_ptr(projection));
 
         if (key_pressed(window, GLFW_KEY_SPACE, previous_space)) {
-            depth_mode = (depth_mode + 1) % 3;
+            depth_mode = (depth_mode + 1) % 4;
         }
+        glDepthFunc(depth_mode == 3 ? GL_ALWAYS : GL_LESS);
         // OpenGL: 写入标量整型或布尔 uniform；sampler 接收纹理单元索引。
-        glUniform1i(depth_mode_uniform, depth_mode);
+        glUniform1i(depth_mode_uniform, depth_mode == 3 ? 0 : depth_mode);
         // OpenGL: 清除已绑定绘制帧缓冲；清除受相关写掩码限制。
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        draw_scene(uniforms);
+
+        draw_cube(uniforms, {-0.8F, -0.25F, 0.0F}, {1.0F, 1.0F, 1.0F}, {1.0F, 0.48F, 0.2F, 1.0F});
+        draw_cube(uniforms, {0.8F, -0.25F, -1.3F}, {1.0F, 1.0F, 1.0F}, {0.15F, 0.7F, 0.85F, 1.0F});
+        draw_cube(uniforms, {0.0F, -0.85F, 0.0F}, {6.0F, 0.1F, 6.0F}, {0.25F, 0.3F, 0.4F, 1.0F});
         ++frame;
         if (!finish_frame(window, options, frame, width, height)) {
             return EXIT_FAILURE;
@@ -457,8 +458,8 @@ int main(int argc, char** argv) {
             const auto [end, error]{
                 std::from_chars(value.data(), value.data() + value.size(), options.initial_mode)};
             if (error != std::errc{} || end != value.data() + value.size() ||
-                options.initial_mode < 0 || options.initial_mode >= 3) {
-                std::cerr << "--mode must be in [0, " << 3 - 1 << "]\n";
+                options.initial_mode < 0 || options.initial_mode >= 4) {
+                std::cerr << "--mode must be in [0, " << 4 - 1 << "]\n";
                 return EXIT_FAILURE;
             }
         } else if (argument == "--capture" && index + 1 < argc) {

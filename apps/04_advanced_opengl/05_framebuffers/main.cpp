@@ -8,10 +8,14 @@
 #include <array>
 #include <charconv>
 #include <cmath>
+#include <cstddef>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <memory>
+#include <random>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -368,12 +372,17 @@ void main()
     vec3 color = texture(screen_texture, tex_coord).rgb;
     if (effect == 1) color = vec3(1.0) - color;
     if (effect == 2) color = vec3(dot(color, vec3(0.2126, 0.7152, 0.0722)));
-    if (effect == 3) {
+    if (effect == 6) color = vec3((color.r + color.g + color.b) / 3.0);
+    if (effect >= 3 && effect <= 5) {
         vec2 step_size = 1.0 / vec2(textureSize(screen_texture, 0));
-        color = 9.0 * color;
+        float blur[9] = float[](1.0,2.0,1.0,2.0,4.0,2.0,1.0,2.0,1.0);
+        color = vec3(0.0);
         for (int y = -1; y <= 1; ++y) {
             for (int x = -1; x <= 1; ++x) {
-                if (x != 0 || y != 0) color -= texture(screen_texture, tex_coord + vec2(x, y) * step_size).rgb;
+                bool center = x == 0 && y == 0;
+                float weight = effect == 3 ? (center ? 9.0 : -1.0) :
+                    effect == 4 ? blur[(y+1)*3+x+1] / 16.0 : (center ? -8.0 : 1.0);
+                color += texture(screen_texture, tex_coord + vec2(x,y)*step_size).rgb * weight;
             }
         }
     }
@@ -512,7 +521,7 @@ int run(GLFWwindow* window, const run_options& options) {
         glUniformMatrix4fv(uniforms.projection, 1, GL_FALSE, glm::value_ptr(projection));
 
         if (key_pressed(window, GLFW_KEY_SPACE, previous_space)) {
-            effect = (effect + 1) % 4;
+            effect = (effect + 1) % 7;
         }
         if (!resize_target(resources, target, width, height)) {
             return EXIT_FAILURE;
@@ -567,8 +576,8 @@ int main(int argc, char** argv) {
             const auto [end, error]{
                 std::from_chars(value.data(), value.data() + value.size(), options.initial_mode)};
             if (error != std::errc{} || end != value.data() + value.size() ||
-                options.initial_mode < 0 || options.initial_mode >= 4) {
-                std::cerr << "--mode must be in [0, " << 4 - 1 << "]\n";
+                options.initial_mode < 0 || options.initial_mode >= 7) {
+                std::cerr << "--mode must be in [0, " << 7 - 1 << "]\n";
                 return EXIT_FAILURE;
             }
         } else if (argument == "--capture" && index + 1 < argc) {

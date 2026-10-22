@@ -1,47 +1,43 @@
 # 高级数据
 
-| 项目 | 内容 |
+| 项目 | 信息 |
 | --- | --- |
-| 原文 | [Advanced Data](https://learnopengl.com/Advanced-OpenGL/Advanced-Data) |
-| 作者 | JoeyDeVries |
-| 来源 | [LearnOpenGL-CN](https://github.com/with-fair-wind/LearnOpenGL-CN/blob/new-theme/docs/04%20Advanced%20OpenGL/07%20Advanced%20Data.md)，按本仓库代码整理修订 |
-| 本仓库示例 | [`apps/04_advanced_opengl/07_advanced_data/`](../../apps/04_advanced_opengl/07_advanced_data/) |
+| 原文 | [Advanced-Data](https://learnopengl.com/Advanced-OpenGL/Advanced-Data) |
+| 作者 | Joey de Vries |
+| 翻译 | Krasjet |
+| 校对 | 暂未校对 |
+| 中文底本 | [LearnOpenGL-CN 上游固定版本](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/04%20Advanced%20OpenGL/07%20Advanced%20Data.md)，`new-theme` / `331560886468e28f28326429334fc48470f9c27b` |
+| 本仓库示例 | [`apps/04_advanced_opengl/07_advanced_data/main.cpp`](../../apps/04_advanced_opengl/07_advanced_data/main.cpp) |
+| 修订 | 按上游完整小节顺序重写，技术差异见正文；[逐项覆盖清单](coverage.md) |
 
-**缓冲对象管理一段字节存储，绑定目标决定当前命令怎样使用它；顶点布局则由 VAO 中的属性格式与偏移解释。** 这一节从“整块上传顶点”推进到分段更新、映射和缓冲间复制。
-
-## 一段存储，多种操作
+**缓冲对象管理一段字节存储，绑定目标决定这次怎样使用它；目标不是对象不可改变的永久类型。** 同一个缓冲可以在不同操作中绑定为顶点数据、复制源或复制目标。驱动决定存储和同步实现，OpenGL 规定可访问范围；应用负责偏移、布局和生命周期，GLFW 不管理这些数据。
 
 ```mermaid
 flowchart LR
-    A[CPU 位置数组] --> B[BufferSubData 写位置块]
-    C[CPU 颜色数组] --> D[映射 staging 缓冲]
-    D --> E[解除映射并检查]
-    E --> F[CopyBufferSubData 写颜色块]
-    B --> G[同一个 VBO]
-    F --> G
-    G --> H[VAO 解释分块布局]
-    H --> I[颜色插值三角形]
+    A[CPU 数组或映射写入] --> B[已分配缓冲存储]
+    B --> C[子区更新]
+    B --> D[COPY_READ / COPY_WRITE 复制]
+    D --> E[最终顶点缓冲]
+    C --> E
+    E --> F[VAO 的格式与偏移]
+    F --> G[顶点着色器]
 ```
 
-应用决定数据所有权、范围与布局；OpenGL 检查缓冲访问条件并定义可见性；驱动管理具体存储和同步。缓冲位于设备本地内存还是某种可访问映射内存属于实现选择，不能把 API 抽象等同于固定的物理位置。
+此前 `glBufferData` 常在分配时一起上传数据；data 为 `nullptr` 时仅分配，内容未初始化。之后用 `glBufferSubData(target, offset, size, data)` 更新已有存储的一部分。它不会自动扩大缓冲，必须满足非负范围及 $offset+size\le buffer\_size$。
 
-## 预留存储与分段更新
+若偏移为 24、长度为 $N$，更新范围是半开区间 $[24,24+N)$，不是包含末字节的闭区间。参数以字节计数，不能直接把顶点数或 float 元素数当字节偏移。本例先给位置和颜色两块预留足够存储，再写位置。
 
-`glBufferData(..., nullptr, ...)` 分配存储但不初始化内容；它不是清零操作。`glBufferSubData` 只能更新已分配范围，不会扩容。本例预留位置和颜色两块空间，再写入位置：
+另一条路径是映射：`glMapBuffer` 返回可在 CPU 访问的指针，访问方式如 `GL_WRITE_ONLY`；`glMapBufferRange` 选择范围和标志。映射不意味着应用拿到了显卡物理内存地址，实现可能使用可见映射或中转存储。
 
-```c++
-    const GLuint vao{create_vertex_array(resources, nullptr, sizeof(positions) + sizeof(colors))};
-    const GLuint vbo{resources.buffers.back()};
-    // OpenGL: 更新已分配存储中的指定字节范围，不能扩大容量。
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(positions), positions.data());
-```
+本例模式 0 映射指定范围，模式 1 映射整个 staging 缓冲。两者都检查空指针，写入后调用 `glUnmapBuffer` 并检查布尔结果。解除映射后原指针失效；返回 `GL_FALSE` 表示内容可能损坏，应重新建立数据，而不是继续绘制。普通非持久映射期间也不能把该缓冲按常规绘制读取方式直接使用。
 
-## 映射、解除映射与复制
-
-映射 staging 缓冲后，检查指针再复制颜色；解除映射必须检查返回值。`GL_FALSE` 表示数据存储内容已经损坏，应重新初始化或放弃绘制，不可继续假定数据正确。解除映射后，原指针立即失效。
-
-```c++
-    void* mapped{glMapBufferRange(GL_COPY_READ_BUFFER, 0, sizeof(colors), GL_MAP_WRITE_BIT)};
+```cpp
+    void* mapped{options.initial_mode == 0 ?
+                                           // OpenGL: 映射指定范围；使用前必须检查返回指针。
+                     glMapBufferRange(GL_COPY_READ_BUFFER, 0, sizeof(colors), GL_MAP_WRITE_BIT)
+                                           :
+                                           // OpenGL: 映射整个已分配缓冲，解除映射前检查返回指针。
+                     glMapBuffer(GL_COPY_READ_BUFFER, GL_WRITE_ONLY)};
     if (mapped == nullptr) {
         std::cerr << "Buffer mapping failed\n";
         return EXIT_FAILURE;
@@ -53,18 +49,29 @@ flowchart LR
         return EXIT_FAILURE;
     }
     glBindBuffer(GL_COPY_WRITE_BUFFER, vbo);
-    // OpenGL: 在两个已分配缓冲的字节区间之间复制数据。
-    glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, sizeof(positions),
-                        sizeof(colors));
 ```
 
-两种 COPY 目标仅提供独立绑定点，避免为了复制而改动 VAO 的顶点或索引关联；目标缓冲须事先有足够容量。本例先解除映射，再把颜色复制到最终 VBO。staging 是教学用的额外一步，不宣称对这九个浮点数比直接上传更高效。
+失败分支打印错误并返回失败。映射适合直接生成或读取文件数据到目标区域，但不保证比一次上传更快；同步、复制量和使用模式都影响收益。
 
-## 分块属性布局
+## 分批顶点属性
 
-内存布局为 `[全部位置][全部颜色]`。两组属性各自紧密排列，步长均是三个 float；颜色偏移是整个位置块的字节数。它与“位置颜色交错排列”的差别只在数据组织与属性配置，不会改变着色器的输入语义。
+此前采用交错布局：`位置0/颜色0/位置1/颜色1/...`，也就是 AoS 风格；分批布局改为 `全部位置/全部颜色`，对应 SoA 风格。法线和 UV 也可各占一个连续块。着色器仍看到每个顶点的位置和颜色，改变的是字节组织和 VAO 解释。
 
-```c++
+本例预留 `sizeof(positions)+sizeof(colors)`，位置先用 `glBufferSubData` 写入，颜色稍后从 staging 复制到位置块后。属性 0 的起点为 0、步长 `3*sizeof(float)`；属性 1 的起点为 `sizeof(positions)`，步长同样是三个 float，因为颜色块中的相邻颜色紧挨着。
+
+```cpp
+    constexpr std::array<float, 9> positions{-0.75F, -0.6F, 0.0F, 0.75F, -0.6F,
+                                             0.0F,   0.0F,  0.7F, 0.0F};
+    constexpr std::array<float, 9> colors{1.0F, 0.2F, 0.15F, 0.15F, 0.9F, 0.25F, 0.2F, 0.4F, 1.0F};
+    const GLuint vao{create_vertex_array(resources, nullptr, sizeof(positions) + sizeof(colors))};
+    const GLuint vbo{resources.buffers.back()};
+    // OpenGL: 更新已分配存储中的指定字节范围，不能扩大容量。
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(positions), positions.data());
+```
+
+颜色属性配置源码：
+
+```cpp
     // OpenGL: 分块布局 [全部位置][全部颜色]；颜色起点是位置块的字节数。
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float),
@@ -72,39 +79,56 @@ flowchart LR
     glEnableVertexAttribArray(1);
 ```
 
-> **常见误解：** 把同一缓冲改绑到 `GL_COPY_WRITE_BUFFER` 会复制或重新分配数据。
-> **纠正：** 绑定只改变命令所引用的对象。`glBufferData`、子范围更新、映射写入和复制命令才改变存储或内容。
+上面如果需要查找具体颜色块起点，可在代码中看到 `reinterpret_cast<const void*>(sizeof(positions))`。指针参数在这里表达绑定缓冲中的**字节偏移**，不是要解引用的普通 CPU 地址。若再加入法线和 UV，三块可分别从 `0`、`sizeof(positions)`、`sizeof(positions)+sizeof(normals)` 开始，步长分别为单个属性元素大小。
 
-> **进阶（流式数据与同步）：** **映射不等于免费获得异步写权限。** GPU 仍在读取时，驱动可能为了正确性等待；使用 unsynchronized 等选项则需要应用自行保证不冲突。本例全部在初始绘制前上传，因此没有每帧复用的同步压力。频繁更新时可研究缓冲轮换、孤立旧存储或栅栏同步，并以正确的生命周期为前提测量收益。
+原教程建议交错布局以改善同一顶点所需数据的局部性，这是常见经验，不是所有 GPU 上的强制最优解。只更新位置、只读取某些属性或资源原本分成数组时，分批布局也可能更方便；布局应服从实际数据流与测量。
+
+## 复制缓冲
+
+`glCopyBufferSubData(readtarget,writetarget,readoffset,writeoffset,size)` 复制已经存在的两个存储范围。前两个参数是绑定目标，不是对象名称；真正源/目标由当前绑定决定。后面三个值均为字节单位。复制不会自动分配目标，也不能把同一缓冲中重叠的区间用于这种复制。
+
+如果两个缓冲平常都用 `GL_ARRAY_BUFFER`，它们仍可分别绑定到 `GL_COPY_READ_BUFFER` 和 `GL_COPY_WRITE_BUFFER`，不需要改变对象本身。这样还能避免为数据搬运而意外改写顶点配置；`GL_ELEMENT_ARRAY_BUFFER` 的绑定尤其属于当前 VAO 状态，应谨慎处理。
+
+本例先给 staging 分配颜色存储，经映射填入颜色，再把它复制到最终顶点缓冲的颜色块：
+
+```cpp
+    glBindBuffer(GL_COPY_WRITE_BUFFER, vbo);
+    // OpenGL: 在两个已分配缓冲的字节区间之间复制数据。
+    glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, sizeof(positions),
+                        sizeof(colors));
+```
+
+底本还展示保留读源在 `GL_ARRAY_BUFFER`、只把写目标设为 `GL_COPY_WRITE_BUFFER` 的等价方案。要点是两个目标能分别指向两个缓冲，而不是必须选择一对特殊名字。复制由实现执行，不要求应用先 `glGetBufferSubData` 读回 CPU 再重新上传。
+
+> **常见误解：** `glBufferData` 是分配/替换存储，`glBufferSubData` 是写已有子区，`glCopyBufferSubData` 是存储间复制。三个函数都带 size，却有不同的前置条件，不能混用。
+
+> **进阶（映射与同步）：** **CPU 可以访问一个指针，不代表 GPU 已经不再使用对应数据。** 常规映射可能等待前面的 GPU 工作，范围映射标志也有各自同步契约。本例在开始绘制前一次性初始化，避免展示未经说明的异步写入。持续流式更新应结合多缓冲、孤立存储或明确同步策略设计；不要随意加入 unsynchronized 标志来掩盖等待。
 
 ## 本仓库示例
 
-示例源码：[`apps/04_advanced_opengl/07_advanced_data/main.cpp`](../../apps/04_advanced_opengl/07_advanced_data/main.cpp)。代码片段均原样取自此文件；原站概念图片与本例实测截图分别标明。
-
-首次安装依赖与工具链要求见[构建指南](../build.md)。已安装默认 MinGW GCC Debug 依赖时，在仓库根目录执行：
+源码：[`main.cpp`](../../apps/04_advanced_opengl/07_advanced_data/main.cpp)，目标：`04_advanced_opengl__07_advanced_data`。正文标为源码的 C++/GLSL 均直接摘取此文件；标为概念说明的独立片段用于说明规范或未启用的更高版本功能。
 
 ```powershell
 cmake --preset mingw-gcc-debug
 cmake --build --preset mingw-gcc-debug --target 04_advanced_opengl__07_advanced_data
-.\build\mingw-gcc-debug\apps\04_advanced_opengl\07_advanced_data\04_advanced_opengl__07_advanced_data.exe
+.\build\mingw-gcc-debug\apps\04_advanced_opengl\07_advanced_data\04_advanced_opengl__07_advanced_data.exe --mode 0
 ```
 
-Esc 退出；本例使用固定的二维视图，不捕获鼠标。
+依赖准备、多配置生成器与其他工具链见[构建指南](../build.md)。Esc 是退出键；除 07 的二维数据示例外，三维场景支持 WASD、鼠标与滚轮。空格按表中顺序切换（07 用启动参数选择映射方法）。有限帧检查可追加 `--frames 3 --capture output.ppm`，截图取最后一帧；它验证绘制路径，不能代替交互和视觉检查。
 
-本仓库实测截图（默认模式）：
+| `--mode` | 可观察内容 |
+| --- | --- |
+| 0 | 范围映射与复制 |
+| 1 | 完整缓冲映射与复制 |
 
-![](../img/04/07/07_advanced_data.png)
-
-本章示例还支持 `--frames 3` 隐藏窗口运行指定帧数、`--mode M` 选择初始模式；配合 `--capture output.ppm` 可保存最后一帧。参数与检查方式详见[构建指南的高级 OpenGL 示例说明](../build.md#高级-opengl-示例)。
+![本仓库模式 0 实测截图](../img/04/07/07_advanced_data.png)
 
 ## 本章整体回顾
 
-- **局部**：在已分配的字节范围内更新、映射和复制，再由 VAO 解释布局。
-- **整体**：明确存储与解释的分工后，可将共享矩阵放到统一布局的缓冲块中。
+缓冲对象管理字节，绑定目标决定当前操作。分块布局改变属性偏移而不改变顶点着色器语义；映射、子区更新、复制均要检查范围、同步与对象生命周期。
 
-## 核校参考
+本篇承接前一篇，正文保留底本对应的小节与主案例。图片中的背包、箱子等属于上游演示，本仓库使用独立注明的教学场景；本仓库截图与上游图分开标注。图片出处见[资源记录](../img/04/README.md)，对应关系与验证边界见[覆盖清单](coverage.md)。
 
-- [OpenGL 3.3 Core 规范](https://registry.khronos.org/OpenGL/specs/gl/glspec33.core.pdf)：缓冲数据存储、映射和复制。
-- [GLSL 3.30 规范](https://registry.khronos.org/OpenGL/specs/gl/GLSLangSpec.3.30.pdf)：阶段输入输出、内建变量及本例使用的语言语义。
+技术核校：[英文原文](https://learnopengl.com/Advanced-OpenGL/Advanced-Data)、[OpenGL 3.3 Core 规范](https://registry.khronos.org/OpenGL/specs/gl/glspec33.core.pdf)、[GLSL 3.30 规范](https://registry.khronos.org/OpenGL/specs/gl/GLSLangSpec.3.30.pdf)。
 
-下一节：[高级 GLSL](08_advanced_glsl.md)
+下一节：[高级 GLSL](08_advanced_glsl.md)。

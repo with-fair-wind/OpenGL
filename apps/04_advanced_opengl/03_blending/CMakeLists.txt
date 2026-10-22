@@ -8,4 +8,7 @@ target_link_libraries(
         glad::glad
         glfw
         glm::glm-header-only
+        stb::stb
 )
+
+target_compile_definitions(04_advanced_opengl__03_blending PRIVATE OPENGL_LAB_ASSET_ROOT="${PROJECT_SOURCE_DIR}/assets")

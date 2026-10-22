@@ -8,10 +8,14 @@
 #include <array>
 #include <charconv>
 #include <cmath>
+#include <cstddef>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <memory>
+#include <random>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -23,6 +27,15 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
+// clang-format off
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
+#include <assimp/Importer.hpp>
+#include <assimp/postprocess.h>
+#include <assimp/scene.h>
+// clang-format on
 
 namespace {
 
@@ -289,15 +302,19 @@ constexpr std::array<float, 108> cube_vertices{
 constexpr const char* vertex_shader_source{R"glsl(
 #version 330 core
 layout (location = 0) in vec3 a_pos;
+layout (location = 1) in vec3 a_normal;
+uniform bool imported_model;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 out vec3 world_pos;
 out vec3 local_pos;
+out vec3 world_normal;
 void main()
 {
     world_pos = vec3(model * vec4(a_pos, 1.0));
     local_pos = a_pos;
+    world_normal = mat3(transpose(inverse(model))) * a_normal;
     gl_Position = projection * view * vec4(world_pos, 1.0);
 }
 )glsl"};
@@ -305,6 +322,8 @@ constexpr const char* fragment_shader_source{R"glsl(
 #version 330 core
 in vec3 world_pos;
 in vec3 local_pos;
+in vec3 world_normal;
+uniform bool imported_model;
 out vec4 frag_color;
 uniform samplerCube environment_map;
 uniform vec3 camera_pos;
@@ -316,6 +335,7 @@ void main()
     vec3 normal = axis.x > axis.y && axis.x > axis.z ? vec3(sign(local_pos.x), 0.0, 0.0) :
                   axis.y > axis.z ? vec3(0.0, sign(local_pos.y), 0.0) : vec3(0.0, 0.0, sign(local_pos.z));
     normal = normalize(mat3(transpose(inverse(model))) * normal);
+    if (imported_model) normal = normalize(world_normal);
     vec3 incident = normalize(world_pos - camera_pos);
     vec3 direction = refract_mode ? refract(incident, normal, 1.0 / 1.52) : reflect(incident, normal);
     frag_color = texture(environment_map, direction);
@@ -345,6 +365,157 @@ void main()
 }
 )glsl"};
 
+#ifndef OPENGL_LAB_ASSET_ROOT
+#define OPENGL_LAB_ASSET_ROOT "."
+#endif
+/** @brief stb_image 返回的 CPU 图像在上传后立即释放。 */
+struct stbi_image_deleter {
+    void operator()(unsigned char* pixels) const {
+        stbi_image_free(pixels);
+    }
+};
+/** @brief 纹理路径由编译期资源根定位，不依赖启动目录。 */
+std::filesystem::path asset_path(const char* relative) {
+    return std::filesystem::path{OPENGL_LAB_ASSET_ROOT} / relative;
+}
+
+/** @brief 一个索引网格；实际 GPU 对象由本文件的资源守卫拥有。 */
+struct render_mesh {
+    GLuint vao{0U};
+    GLsizei count{0};
+};
+/** @brief 明确记录位置、法线和 UV，避免把立方体位置猜测为模型法线。 */
+struct vertex {
+    glm::vec3 position{};
+    glm::vec3 normal{};
+    glm::vec2 tex_coord{};
+};
+/** @brief aiMatrix4x4 按行命名，显式转换到 GLM 的列索引。 */
+glm::mat4 node_matrix(const aiMatrix4x4& source) {
+    glm::mat4 result{1.0F};
+    for (int row{0}; row < 4; ++row) {
+        for (int column{0}; column < 4; ++column) {
+            result[column][row] = source[row][column];
+        }
+    }
+    return result;
+}
+/** @brief 递归累积节点变换，复制顶点后不保留 aiScene 指针。 */
+void upload_node(gpu_resources& resources, const aiScene& scene, const aiNode& node,
+                 const glm::mat4& parent, std::vector<render_mesh>& meshes) {
+    const glm::mat4 transform{parent * node_matrix(node.mTransformation)};
+    const glm::mat3 normal_matrix{glm::transpose(glm::inverse(glm::mat3{transform}))};
+    for (unsigned int index{0U}; index < node.mNumMeshes; ++index) {
+        const aiMesh& mesh{*scene.mMeshes[node.mMeshes[index]]};
+        std::vector<vertex> vertices{};
+        std::vector<unsigned int> indices{};
+        vertices.reserve(mesh.mNumVertices);
+        for (unsigned int item{0U}; item < mesh.mNumVertices; ++item) {
+            const auto& p{mesh.mVertices[item]};
+            const auto& n{mesh.mNormals[item]};
+            const glm::vec2 uv{mesh.HasTextureCoords(0) ? glm::vec2{mesh.mTextureCoords[0][item].x,
+                                                                    mesh.mTextureCoords[0][item].y}
+                                                        : glm::vec2{0.0F}};
+            vertices.push_back({glm::vec3{transform * glm::vec4{p.x, p.y, p.z, 1.0F}},
+                                glm::normalize(normal_matrix * glm::vec3{n.x, n.y, n.z}), uv});
+        }
+        for (unsigned int face{0U}; face < mesh.mNumFaces; ++face) {
+            const aiFace& item{mesh.mFaces[face]};
+            indices.insert(indices.end(), item.mIndices, item.mIndices + item.mNumIndices);
+        }
+        render_mesh uploaded{};
+        GLuint vbo{0U};
+        GLuint ebo{0U};
+        glGenVertexArrays(1, &uploaded.vao);
+        glGenBuffers(1, &vbo);
+        glGenBuffers(1, &ebo);
+        resources.arrays.push_back(uploaded.vao);
+        resources.buffers.push_back(vbo);
+        resources.buffers.push_back(ebo);
+        glBindVertexArray(uploaded.vao);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(vertices.size() * sizeof(vertex)),
+                     vertices.data(), GL_STATIC_DRAW);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                     static_cast<GLsizeiptr>(indices.size() * sizeof(unsigned int)), indices.data(),
+                     GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertex),
+                              reinterpret_cast<const void*>(offsetof(vertex, position)));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(vertex),
+                              reinterpret_cast<const void*>(offsetof(vertex, normal)));
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(vertex),
+                              reinterpret_cast<const void*>(offsetof(vertex, tex_coord)));
+        glEnableVertexAttribArray(0);
+        glEnableVertexAttribArray(1);
+        glEnableVertexAttribArray(2);
+        uploaded.count = static_cast<GLsizei>(indices.size());
+        meshes.push_back(uploaded);
+    }
+    for (unsigned int child{0U}; child < node.mNumChildren; ++child) {
+        upload_node(resources, scene, *node.mChildren[child], transform, meshes);
+    }
+}
+/** @brief 复用第三章的 Assimp 节点遍历思路；本章几何交给各示例指定的着色程序处理。 */
+std::vector<render_mesh> load_model(gpu_resources& resources, const char* relative) {
+    Assimp::Importer importer{};
+    const auto path{asset_path(relative)};
+    const aiScene* scene{importer.ReadFile(path.string(), aiProcess_Triangulate |
+                                                              aiProcess_GenSmoothNormals |
+                                                              aiProcess_JoinIdenticalVertices)};
+    if (scene == nullptr || scene->mRootNode == nullptr ||
+        (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) != 0U) {
+        std::cerr << "Model load failed: " << path << ": " << importer.GetErrorString() << '\n';
+        return {};
+    }
+    std::vector<render_mesh> meshes{};
+    upload_node(resources, *scene, *scene->mRootNode, glm::mat4{1.0F}, meshes);
+    return meshes;
+}
+/** @brief 每个网格一个索引绘制，VAO 自己记录 EBO。 */
+void draw_model(const std::vector<render_mesh>& meshes) {
+    for (const render_mesh& mesh : meshes) {
+        // OpenGL: 从 VAO 保存的 EBO 读取索引。
+        glBindVertexArray(mesh.vao);
+        glDrawElements(GL_TRIANGLES, mesh.count, GL_UNSIGNED_INT, nullptr);
+    }
+}
+
+/** @brief 顺序是 +X/-X/+Y/-Y/+Z/-Z；六面必须同尺寸、正方形。 */
+GLuint load_cubemap(gpu_resources& resources) {
+    constexpr std::array<const char*, 6> names{"right.jpg",  "left.jpg",  "top.jpg",
+                                               "bottom.jpg", "front.jpg", "back.jpg"};
+    GLuint cubemap{0U};
+    // OpenGL: 创建供六面图像共享的纹理名称。
+    glGenTextures(1, &cubemap);
+    resources.textures.push_back(cubemap);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap);
+    int side{0};
+    for (std::size_t face{0U}; face < names.size(); ++face) {
+        const auto path{asset_path("textures/skybox") / names[face]};
+        int width{0};
+        int height{0};
+        int channels{0};
+        const std::unique_ptr<unsigned char, stbi_image_deleter> pixels{
+            stbi_load(path.string().c_str(), &width, &height, &channels, STBI_rgb_alpha)};
+        if (!pixels || width != height || (face != 0U && width != side)) {
+            std::cerr << "Invalid cubemap face: " << path << '\n';
+            return 0U;
+        }
+        side = width;
+        // OpenGL: 分别上传六面 level 0 图像，面目标决定轴向而非绑定六个纹理。
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + static_cast<GLenum>(face), 0, GL_RGBA8, width,
+                     height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.get());
+    }
+    // OpenGL: 立方体纹理采用不需要 mipmap 的线性过滤与边缘延拓。
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    return cubemap;
+}
+
 /** @brief 在当前有效上下文内创建资源并运行渲染循环。 */
 int run(GLFWwindow* window, const run_options& options) {
     gpu_resources resources{};
@@ -369,32 +540,15 @@ int run(GLFWwindow* window, const run_options& options) {
         return EXIT_FAILURE;
     }
     const GLuint vao{create_vertex_array(resources, cube_vertices.data(), sizeof(cube_vertices))};
-    GLuint cubemap{0U};
-    // OpenGL: 创建纹理对象名称。
-    glGenTextures(1, &cubemap);
-    resources.textures.push_back(cubemap);
-    // OpenGL: 绑定纹理到当前活动纹理单元的指定目标。
-    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap);
-    constexpr std::array<std::array<unsigned char, 4>, 6> face_colors{{{240, 90, 70, 255},
-                                                                       {60, 180, 220, 255},
-                                                                       {100, 150, 240, 255},
-                                                                       {50, 60, 80, 255},
-                                                                       {230, 190, 70, 255},
-                                                                       {100, 210, 140, 255}}};
-    for (std::size_t face{0U}; face < face_colors.size(); ++face) {
-        // OpenGL: 定义纹理图像存储；空指针仅分配空间。
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + static_cast<GLenum>(face), 0, GL_RGBA8, 1, 1,
-                     0, GL_RGBA, GL_UNSIGNED_BYTE, face_colors[face].data());
+    const GLuint cubemap{load_cubemap(resources)};
+    const auto imported{load_model(resources, "models/stage/stage.obj")};
+    const GLint imported_uniform{uniform_location(program, "imported_model")};
+    if (cubemap == 0U || imported.empty() || imported_uniform < 0) {
+        return EXIT_FAILURE;
     }
-    // OpenGL: 配置纹理过滤与环绕状态。
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
     // OpenGL: 启用当前示例所需的固定功能状态。
     glEnable(GL_DEPTH_TEST);
-    bool refract_mode{options.initial_mode != 0};
+    int mode{options.initial_mode};
     bool previous_space{false};
 
     int frame{0};
@@ -422,7 +576,7 @@ int run(GLFWwindow* window, const run_options& options) {
         glClearColor(0.045F, 0.06F, 0.09F, 1.0F);
 
         if (key_pressed(window, GLFW_KEY_SPACE, previous_space)) {
-            refract_mode = !refract_mode;
+            mode = (mode + 1) % 4;
         }
         // OpenGL: 清除已绑定绘制帧缓冲；清除受相关写掩码限制。
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -446,10 +600,17 @@ int run(GLFWwindow* window, const run_options& options) {
         glUniform3fv(camera_uniform, 1, glm::value_ptr(camera_position));
         // OpenGL: 写入标量整型或布尔 uniform；sampler 接收纹理单元索引。
         glUniform1i(environment_uniform, 0);
-        glUniform1i(refract_uniform, refract_mode ? GL_TRUE : GL_FALSE);
+        glUniform1i(refract_uniform, (mode % 2) != 0 ? GL_TRUE : GL_FALSE);
+        glUniform1i(imported_uniform, mode >= 2 ? GL_TRUE : GL_FALSE);
+        if (mode >= 2) {
+            draw_model(imported);
+        }
         // OpenGL: 按照当前 VAO 和程序解释顶点并提交图元。
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        else {
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
         // OpenGL: 天空盒投影后 z/w=1；允许等于清除深度，且不写回深度缓冲。
+        glBindVertexArray(vao);
         // OpenGL: 指定新片段深度与存储深度之间的比较函数。
         glDepthFunc(GL_LEQUAL);
         // OpenGL: 只控制深度写入，不关闭深度比较。
@@ -490,8 +651,8 @@ int main(int argc, char** argv) {
             const auto [end, error]{
                 std::from_chars(value.data(), value.data() + value.size(), options.initial_mode)};
             if (error != std::errc{} || end != value.data() + value.size() ||
-                options.initial_mode < 0 || options.initial_mode >= 2) {
-                std::cerr << "--mode must be in [0, " << 2 - 1 << "]\n";
+                options.initial_mode < 0 || options.initial_mode >= 4) {
+                std::cerr << "--mode must be in [0, " << 4 - 1 << "]\n";
                 return EXIT_FAILURE;
             }
         } else if (argument == "--capture" && index + 1 < argc) {

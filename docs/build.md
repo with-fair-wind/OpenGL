@@ -293,23 +293,23 @@ build/msvc-vs2026/OpenGLLab.sln
 
 ## 高级 OpenGL 示例
 
-`apps/04_advanced_opengl/` 的 11 个独立目标沿用上述全部构建 preset，只使用已有的 GLAD、GLFW 和 GLM，无需新增 Conan 依赖。完整教程入口见[高级 OpenGL 索引](04_advanced_opengl/README.md)。
+`apps/04_advanced_opengl/` 的 11 个独立目标沿用上述全部构建 preset，使用已有的 GLAD、GLFW、GLM，以及透明贴图/模型示例需要的 stb_image 和 Assimp，无需新增 Conan 包。完整教程与上游覆盖记录见[高级 OpenGL 索引](04_advanced_opengl/README.md)和[覆盖清单](04_advanced_opengl/coverage.md)。
 
 | 示例目录 | 目标名称 | 空格切换 |
 | --- | --- | --- |
-| `01_depth_testing` | `04_advanced_opengl__01_depth_testing` | 颜色 / 原始深度 / 线性深度 |
+| `01_depth_testing` | `04_advanced_opengl__01_depth_testing` | LESS 场景 / 原始深度 / 线性距离 / ALWAYS 对照 |
 | `02_stencil_testing` | `04_advanced_opengl__02_stencil_testing` | — |
-| `03_blending` | `04_advanced_opengl__03_blending` | — |
+| `03_blending` | `04_advanced_opengl__03_blending` | 排序玻璃 / 未排序且写深度 / 草叶不丢弃 / 草叶丢弃 |
 | `04_face_culling` | `04_advanced_opengl__04_face_culling` | CCW / CW 正面定义 |
-| `05_framebuffers` | `04_advanced_opengl__05_framebuffers` | 原色 / 反相 / 灰度 / 锐化 |
-| `06_cubemaps` | `04_advanced_opengl__06_cubemaps` | 反射 / 折射 |
-| `07_advanced_data` | `04_advanced_opengl__07_advanced_data` | — |
-| `08_advanced_glsl` | `04_advanced_opengl__08_advanced_glsl` | — |
-| `09_geometry_shader` | `04_advanced_opengl__09_geometry_shader` | — |
-| `10_instancing` | `04_advanced_opengl__10_instancing` | — |
-| `11_anti_aliasing` | `04_advanced_opengl__11_anti_aliasing` | 离屏 MSAA / 单采样 |
+| `05_framebuffers` | `04_advanced_opengl__05_framebuffers` | 原色 / 反相 / 加权灰度 / 锐化 / 模糊 / 边缘检测 / 平均灰度 |
+| `06_cubemaps` | `04_advanced_opengl__06_cubemaps` | 立方体反射 / 折射 / 模型反射 / 折射 |
+| `07_advanced_data` | `04_advanced_opengl__07_advanced_data` | 无空格切换；`--mode 0` 范围映射，`--mode 1` 整体映射 |
+| `08_advanced_glsl` | `04_advanced_opengl__08_advanced_glsl` | UBO / 点尺寸与 ID / 窗口坐标 / 正反面 / 深度输出 |
+| `09_geometry_shader` | `04_advanced_opengl__09_geometry_shader` | 雪顶房子 / 点传递 / 线段 / 彩色房子 / 模型爆破 / 法线叠加 / 绿色房子 |
+| `10_instancing` | `04_advanced_opengl__10_instancing` | 实例数组 / uniform 数组 / 普通小行星 / 矩阵实例小行星 / ID 尺寸渐变 |
+| `11_anti_aliasing` | `04_advanced_opengl__11_anti_aliasing` | RBO 解析 / 单采样 / 多采样纹理自定义解析 / 默认窗口 MSAA / 解析后灰度 |
 
-三维示例使用 `W/A/S/D` 移动、鼠标转向、滚轮改变 FOV；`07_advanced_data`、`09_geometry_shader` 和 `10_instancing` 使用固定二维视图，不捕获鼠标。全部支持 `Esc` 退出。格纹、透明面和六面环境颜色均在源码中定义；本章不读取外部纹理或模型文件。
+三维示例使用 `W/A/S/D` 移动、鼠标转向、滚轮改变 FOV；`07_advanced_data` 为固定二维视图，不捕获鼠标。09/10 同时包含固定二维与可移动三维模式。全部支持 `Esc` 退出。格纹由程序生成；03 读取草/玻璃 PNG，06 读取六张天空盒 JPG 及场景模型，09 读取木箱 OBJ/贴图，10 读取自制行星/岩石 OBJ。路径由 `OPENGL_LAB_ASSET_ROOT` 定位，来源见[资源记录](../assets/chapter04_resources.md)。
 
 例如，在已安装依赖后构建并运行帧缓冲示例：
 

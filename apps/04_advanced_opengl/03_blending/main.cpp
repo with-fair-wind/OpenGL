@@ -8,10 +8,14 @@
 #include <array>
 #include <charconv>
 #include <cmath>
+#include <cstddef>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <memory>
+#include <random>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -23,6 +27,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 namespace {
 
@@ -176,6 +183,15 @@ GLuint create_vertex_array(gpu_resources& resources, const float* data, GLsizeip
     return vao;
 }
 
+/** @brief 按键按下边沿触发一次，避免按住时每帧来回切换。 */
+bool key_pressed(GLFWwindow* window, int key, bool& previous) {
+    // GLFW: 查询 GLFW 缓存的按键状态。
+    const bool down{glfwGetKey(window, key) == GLFW_PRESS};
+    const bool pressed{down && !previous};
+    previous = down;
+    return pressed;
+}
+
 /** @brief 记录 OpenGL 错误，并按需在交换前读取默认后缓冲保存 PPM。 */
 bool finish_frame(GLFWwindow* window, const run_options& options, int frame, int width,
                   int height) {
@@ -253,7 +269,6 @@ void scroll_callback(GLFWwindow*, double, double offset) {
 void process_input(GLFWwindow* window, float delta_time) {
     const float speed{3.0F * std::min(delta_time, 0.1F)};
     const glm::vec3 right{glm::normalize(glm::cross(camera_front, camera_up))};
-    // GLFW: 查询 GLFW 缓存的按键状态。
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
         camera_position += speed * camera_front;
     }
@@ -296,10 +311,16 @@ constexpr const char* fragment_shader_source{R"glsl(
 in vec3 local_pos;
 out vec4 frag_color;
 uniform vec4 object_color;
-uniform bool cutout;
+uniform sampler2D surface_texture;
+uniform int surface_mode;
 void main()
 {
-    if (cutout && length(local_pos.xy) > 0.48) discard;
+    if (surface_mode != 0) {
+        vec4 sampled = texture(surface_texture, vec2(local_pos.x + 0.5, 0.5 - local_pos.y));
+        if (surface_mode == 2 && sampled.a < 0.1) discard;
+        frag_color = sampled;
+        return;
+    }
     float pattern = mod(floor((local_pos.x + 0.5) * 8.0) +
                         floor((local_pos.z + 0.5) * 8.0), 2.0);
     frag_color = vec4(object_color.rgb * mix(0.72, 1.0, pattern), object_color.a);
@@ -342,6 +363,48 @@ void draw_scene(const scene_uniforms& uniforms) {
     draw_cube(uniforms, {0.8F, -0.25F, -1.3F}, {1.0F, 1.0F, 1.0F}, {0.15F, 0.7F, 0.85F, 1.0F});
 }
 
+#ifndef OPENGL_LAB_ASSET_ROOT
+#define OPENGL_LAB_ASSET_ROOT "."
+#endif
+/** @brief stb_image 返回的 CPU 图像在上传后立即释放。 */
+struct stbi_image_deleter {
+    void operator()(unsigned char* pixels) const {
+        stbi_image_free(pixels);
+    }
+};
+/** @brief 纹理路径由编译期资源根定位，不依赖启动目录。 */
+std::filesystem::path asset_path(const char* relative) {
+    return std::filesystem::path{OPENGL_LAB_ASSET_ROOT} / relative;
+}
+/** @brief 统一上传 RGBA，保留草叶和玻璃的 alpha；失败不创建可用纹理。 */
+GLuint load_texture(gpu_resources& resources, const char* relative) {
+    const auto path{asset_path(relative)};
+    int width{0};
+    int height{0};
+    int channels{0};
+    const std::unique_ptr<unsigned char, stbi_image_deleter> pixels{
+        stbi_load(path.string().c_str(), &width, &height, &channels, STBI_rgb_alpha)};
+    if (!pixels) {
+        std::cerr << "Texture load failed: " << path << '\n';
+        return 0U;
+    }
+    GLuint texture{0U};
+    // OpenGL: 创建纹理对象名称。
+    glGenTextures(1, &texture);
+    resources.textures.push_back(texture);
+    // OpenGL: 绑定纹理到当前活动纹理单元的指定目标。
+    glBindTexture(GL_TEXTURE_2D, texture);
+    // OpenGL: 定义纹理图像存储；空指针仅分配空间。
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                 pixels.get());
+    // OpenGL: 配置纹理过滤与环绕状态。
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    return texture;
+}
+
 /** @brief 在当前有效上下文内创建资源并运行渲染循环。 */
 int run(GLFWwindow* window, const run_options& options) {
     gpu_resources resources{};
@@ -360,21 +423,27 @@ int run(GLFWwindow* window, const run_options& options) {
     // OpenGL: 启用当前示例所需的固定功能状态。
     glEnable(GL_DEPTH_TEST);
 
-    const GLint cutout_uniform{uniform_location(program, "cutout")};
-    if (cutout_uniform < 0) {
+    const GLint surface_mode{uniform_location(program, "surface_mode")};
+    const GLint surface_texture{uniform_location(program, "surface_texture")};
+    if (surface_mode < 0 || surface_texture < 0) {
+        return EXIT_FAILURE;
+    }
+    const GLuint grass{load_texture(resources, "textures/grass.png")};
+    const GLuint glass{load_texture(resources, "textures/window.png")};
+    if (grass == 0U || glass == 0U) {
         return EXIT_FAILURE;
     }
     constexpr std::array<float, 18> quad_vertices{-0.5F, -0.5F, 0.0F, 0.5F,  -0.5F, 0.0F,
                                                   0.5F,  0.5F,  0.0F, -0.5F, -0.5F, 0.0F,
                                                   0.5F,  0.5F,  0.0F, -0.5F, 0.5F,  0.0F};
     const GLuint quad{create_vertex_array(resources, quad_vertices.data(), sizeof(quad_vertices))};
-    struct pane {
-        glm::vec3 position;
-        glm::vec4 color;
-    };
-    std::array<pane, 3> panes{{{{-0.35F, 0.0F, 1.0F}, {0.9F, 0.2F, 0.15F, 0.4F}},
-                               {{0.15F, 0.0F, 0.5F}, {0.15F, 0.8F, 0.25F, 0.4F}},
-                               {{0.6F, 0.0F, 0.0F}, {0.2F, 0.4F, 1.0F, 0.4F}}}};
+    constexpr std::array<glm::vec3, 5> positions{{{-1.5F, 0.0F, -0.48F},
+                                                  {1.5F, 0.0F, 0.51F},
+                                                  {0.0F, 0.0F, 0.7F},
+                                                  {-0.3F, 0.0F, -2.3F},
+                                                  {0.5F, 0.0F, -0.6F}}};
+    int mode{options.initial_mode};
+    bool previous_space{false};
 
     int frame{0};
     // GLFW: 取得单调计时器秒数，用于计算帧间隔。
@@ -410,37 +479,44 @@ int run(GLFWwindow* window, const run_options& options) {
         glUniformMatrix4fv(uniforms.view, 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(uniforms.projection, 1, GL_FALSE, glm::value_ptr(projection));
 
+        if (key_pressed(window, GLFW_KEY_SPACE, previous_space)) {
+            mode = (mode + 1) % 4;
+        }
+        // OpenGL: 只控制深度写入，不关闭深度比较。
+        // OpenGL: 关闭指定状态；多阶段绘制结束后恢复下一阶段的前置条件。
+        glDepthMask(GL_TRUE);
+        glDisable(GL_BLEND);
         // OpenGL: 清除已绑定绘制帧缓冲；清除受相关写掩码限制。
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         // OpenGL: 写入标量整型或布尔 uniform；sampler 接收纹理单元索引。
-        glUniform1i(cutout_uniform, GL_FALSE);
+        glUniform1i(surface_mode, 0);
         draw_scene(uniforms);
+        std::array<glm::vec3, 5> sorted{positions};
+        if (mode == 0) {
+            std::stable_sort(sorted.begin(), sorted.end(), [](const auto& left, const auto& right) {
+                return glm::dot(camera_position - left, camera_position - left) >
+                       glm::dot(camera_position - right, camera_position - right);
+            });
+        }
+        // OpenGL: 选择纹理单元；sampler uniform 中填写相应的零起始索引。
         glBindVertexArray(quad);
-        // OpenGL: 二值镂空先按不透明物体绘制，discard 的片段不写颜色与深度。
-        glUniform1i(cutout_uniform, GL_TRUE);
-        glm::mat4 model{glm::translate(glm::mat4{1.0F}, {-1.8F, 0.0F, 0.6F})};
-        glUniformMatrix4fv(uniforms.model, 1, GL_FALSE, glm::value_ptr(model));
-        // OpenGL: 设置 RGBA 颜色，alpha 是否参与混合由状态决定。
-        glUniform4f(uniforms.color, 0.2F, 0.85F, 0.4F, 1.0F);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-        glUniform1i(cutout_uniform, GL_FALSE);
-        std::stable_sort(panes.begin(), panes.end(), [](const pane& left, const pane& right) {
-            return glm::dot(camera_position - left.position, camera_position - left.position) >
-                   glm::dot(camera_position - right.position, camera_position - right.position);
-        });
-        glEnable(GL_BLEND);
-        // OpenGL: 分别设置 RGB 与 alpha 的源/目标系数。
-        glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-        // OpenGL: 只控制深度写入，不关闭深度比较。
-        glDepthMask(GL_FALSE);
-        for (const pane& item : panes) {
-            model = glm::scale(glm::translate(glm::mat4{1.0F}, item.position), glm::vec3{1.6F});
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, mode >= 2 ? grass : glass);
+        glUniform1i(surface_texture, 0);
+        glUniform1i(surface_mode, mode == 3 ? 2 : 1);
+        if (mode < 2) {
+            glEnable(GL_BLEND);
+            // OpenGL: 分别设置 RGB 与 alpha 的源/目标系数。
+            glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE,
+                                GL_ONE_MINUS_SRC_ALPHA);
+            glDepthMask(mode == 0 ? GL_FALSE : GL_TRUE);
+        }
+        for (const auto& position : sorted) {
+            const glm::mat4 model{glm::translate(glm::mat4{1.0F}, position)};
             glUniformMatrix4fv(uniforms.model, 1, GL_FALSE, glm::value_ptr(model));
-            glUniform4fv(uniforms.color, 1, glm::value_ptr(item.color));
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
         glDepthMask(GL_TRUE);
-        // OpenGL: 关闭指定状态；多阶段绘制结束后恢复下一阶段的前置条件。
         glDisable(GL_BLEND);
         ++frame;
         if (!finish_frame(window, options, frame, width, height)) {
@@ -471,8 +547,8 @@ int main(int argc, char** argv) {
             const auto [end, error]{
                 std::from_chars(value.data(), value.data() + value.size(), options.initial_mode)};
             if (error != std::errc{} || end != value.data() + value.size() ||
-                options.initial_mode < 0 || options.initial_mode >= 1) {
-                std::cerr << "--mode must be in [0, " << 1 - 1 << "]\n";
+                options.initial_mode < 0 || options.initial_mode >= 4) {
+                std::cerr << "--mode must be in [0, " << 4 - 1 << "]\n";
                 return EXIT_FAILURE;
             }
         } else if (argument == "--capture" && index + 1 < argc) {

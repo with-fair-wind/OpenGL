@@ -8,10 +8,14 @@
 #include <array>
 #include <charconv>
 #include <cmath>
+#include <cstddef>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <memory>
+#include <random>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -368,12 +372,17 @@ void main()
     vec3 color = texture(screen_texture, tex_coord).rgb;
     if (effect == 1) color = vec3(1.0) - color;
     if (effect == 2) color = vec3(dot(color, vec3(0.2126, 0.7152, 0.0722)));
-    if (effect == 3) {
+    if (effect == 6) color = vec3((color.r + color.g + color.b) / 3.0);
+    if (effect >= 3 && effect <= 5) {
         vec2 step_size = 1.0 / vec2(textureSize(screen_texture, 0));
-        color = 9.0 * color;
+        float blur[9] = float[](1.0,2.0,1.0,2.0,4.0,2.0,1.0,2.0,1.0);
+        color = vec3(0.0);
         for (int y = -1; y <= 1; ++y) {
             for (int x = -1; x <= 1; ++x) {
-                if (x != 0 || y != 0) color -= texture(screen_texture, tex_coord + vec2(x, y) * step_size).rgb;
+                bool center = x == 0 && y == 0;
+                float weight = effect == 3 ? (center ? 9.0 : -1.0) :
+                    effect == 4 ? blur[(y+1)*3+x+1] / 16.0 : (center ? -8.0 : 1.0);
+                color += texture(screen_texture, tex_coord + vec2(x,y)*step_size).rgb * weight;
             }
         }
     }
@@ -485,6 +494,61 @@ bool resize_multisample(gpu_resources& resources, multisample_target& target, in
     return true;
 }
 
+/** @brief 同尺寸、同采样数的多采样颜色与深度/模板附件。 */
+struct multisample_texture_target {
+    GLuint framebuffer{0U};
+    GLuint color{0U};
+    GLuint depth_stencil{0U};
+    int width{0};
+    int height{0};
+};
+
+/** @brief 多采样颜色纹理可由 sampler2DMS 逐样本读取，深度/模板使用匹配的 RBO。 */
+bool resize_multisample_texture(gpu_resources& resources, multisample_texture_target& target,
+                                int width, int height, GLsizei samples) {
+    if (target.framebuffer == 0U) {
+        glGenFramebuffers(1, &target.framebuffer);
+        glGenTextures(1, &target.color);
+        glGenRenderbuffers(1, &target.depth_stencil);
+        resources.framebuffers.push_back(target.framebuffer);
+        resources.textures.push_back(target.color);
+        resources.renderbuffers.push_back(target.depth_stencil);
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, target.framebuffer);
+    if (target.width != width || target.height != height) {
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, target.color);
+        // OpenGL: 分配固定样本位置的多采样纹理，不使用常规过滤和 mipmap。
+        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_RGB8, width, height,
+                                GL_TRUE);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE,
+                               target.color, 0);
+        glBindRenderbuffer(GL_RENDERBUFFER, target.depth_stencil);
+        glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH24_STENCIL8, width,
+                                         height);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER,
+                                  target.depth_stencil);
+        target.width = width;
+        target.height = height;
+    }
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        std::cerr << "Multisample framebuffer incomplete\n";
+        return false;
+    }
+    return true;
+}
+constexpr const char* resolve_fragment_source{R"glsl(
+#version 330 core
+out vec4 frag_color;
+uniform sampler2DMS multisample_texture;
+uniform int sample_count;
+void main() {
+    vec3 color = vec3(0);
+    for (int sample_index=0; sample_index<sample_count; ++sample_index)
+        color += texelFetch(multisample_texture,ivec2(gl_FragCoord.xy),sample_index).rgb;
+    frag_color = vec4(color/float(sample_count),1);
+}
+)glsl"};
+
 /** @brief 在当前有效上下文内创建资源并运行渲染循环。 */
 int run(GLFWwindow* window, const run_options& options) {
     gpu_resources resources{};
@@ -530,7 +594,16 @@ int run(GLFWwindow* window, const run_options& options) {
     }
     std::cout << "Offscreen MSAA samples: " << samples << '\n';
     effect = 0;
-    bool use_msaa{options.initial_mode == 0};
+    int mode{options.initial_mode};
+    multisample_texture_target texture_target{};
+    const GLuint resolve_program{
+        create_program(resources, screen_vertex_source, resolve_fragment_source)};
+    if (resolve_program == 0U) {
+        return EXIT_FAILURE;
+    }
+    GLint default_samples{0};
+    glGetIntegerv(GL_SAMPLES, &default_samples);
+    std::cout << "Default framebuffer samples: " << default_samples << '\n';
     glEnable(GL_MULTISAMPLE);
 
     int frame{0};
@@ -568,41 +641,60 @@ int run(GLFWwindow* window, const run_options& options) {
         glUniformMatrix4fv(uniforms.projection, 1, GL_FALSE, glm::value_ptr(projection));
 
         if (key_pressed(window, GLFW_KEY_SPACE, previous_space)) {
-            use_msaa = !use_msaa;
+            mode = (mode + 1) % 5;
         }
         if (!resize_target(resources, target, width, height) ||
-            !resize_multisample(resources, multisample, width, height, samples)) {
+            !resize_multisample(resources, multisample, width, height, samples) ||
+            !resize_multisample_texture(resources, texture_target, width, height, samples)) {
             return EXIT_FAILURE;
         }
         glBindTexture(GL_TEXTURE_2D, 0);
-        glBindFramebuffer(GL_FRAMEBUFFER, use_msaa ? multisample.framebuffer : target.framebuffer);
-        glEnable(GL_DEPTH_TEST);
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, mode == 3   ? 0U
+                                          : mode == 1 ? target.framebuffer
+                                          : mode == 2 ? texture_target.framebuffer
+                                                      : multisample.framebuffer);
         // OpenGL: 清除已绑定绘制帧缓冲；清除受相关写掩码限制。
+        glEnable(GL_DEPTH_TEST);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         draw_scene(uniforms);
-        if (use_msaa) {
-            glBindFramebuffer(GL_READ_FRAMEBUFFER, multisample.framebuffer);
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, target.framebuffer);
-            // OpenGL: 多采样解析必须保持源/目标尺寸一致；这里仅解析颜色。
-            // OpenGL: 从读 FBO 解析颜色到单采样写 FBO；解析时不缩放。
-            glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT,
-                              GL_NEAREST);
-        }
+        if (mode == 3) {
+            // GLFW: 默认帧缓冲在窗口创建时请求 MSAA，交换缓冲时由窗口系统完成解析。
+        } else if (mode == 2) {
+            // OpenGL: 关闭指定状态；多阶段绘制结束后恢复下一阶段的前置条件。
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glDisable(GL_DEPTH_TEST);
+            // OpenGL: 选择纹理单元；sampler uniform 中填写相应的零起始索引。
+            glUseProgram(resolve_program);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texture_target.color);
+            // OpenGL: 写入标量整型或布尔 uniform；sampler 接收纹理单元索引。
+            glUniform1i(uniform_location(resolve_program, "multisample_texture"), 0);
+            glUniform1i(uniform_location(resolve_program, "sample_count"), samples);
+            glBindVertexArray(screen_vao);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+        } else {
+            if (mode != 1) {
+                glBindFramebuffer(GL_READ_FRAMEBUFFER, multisample.framebuffer);
+                glBindFramebuffer(GL_DRAW_FRAMEBUFFER, target.framebuffer);
+                // OpenGL: 从读 FBO 解析颜色到单采样写 FBO；解析时不缩放。
+                glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT,
+                                  GL_NEAREST);
+            }
+            effect = mode == 4 ? 2 : 0;
 
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glViewport(0, 0, width, height);
-        // OpenGL: 关闭指定状态；多阶段绘制结束后恢复下一阶段的前置条件。
-        glDisable(GL_DEPTH_TEST);
-        glClear(GL_COLOR_BUFFER_BIT);
-        glUseProgram(screen_program);
-        // OpenGL: 写入标量整型或布尔 uniform；sampler 接收纹理单元索引。
-        glUniform1i(screen_texture_uniform, 0);
-        glUniform1i(effect_uniform, effect);
-        // OpenGL: 选择纹理单元；sampler uniform 中填写相应的零起始索引。
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, target.color);
-        glBindVertexArray(screen_vao);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glViewport(0, 0, width, height);
+            glDisable(GL_DEPTH_TEST);
+            glClear(GL_COLOR_BUFFER_BIT);
+            glUseProgram(screen_program);
+            glUniform1i(screen_texture_uniform, 0);
+            glUniform1i(effect_uniform, effect);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, target.color);
+            glBindVertexArray(screen_vao);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+        }
         ++frame;
         if (!finish_frame(window, options, frame, width, height)) {
             return EXIT_FAILURE;
@@ -632,8 +724,8 @@ int main(int argc, char** argv) {
             const auto [end, error]{
                 std::from_chars(value.data(), value.data() + value.size(), options.initial_mode)};
             if (error != std::errc{} || end != value.data() + value.size() ||
-                options.initial_mode < 0 || options.initial_mode >= 2) {
-                std::cerr << "--mode must be in [0, " << 2 - 1 << "]\n";
+                options.initial_mode < 0 || options.initial_mode >= 5) {
+                std::cerr << "--mode must be in [0, " << 5 - 1 << "]\n";
                 return EXIT_FAILURE;
             }
         } else if (argument == "--capture" && index + 1 < argc) {
@@ -657,6 +749,7 @@ int main(int argc, char** argv) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_SAMPLES, 4);
     glfwWindowHint(GLFW_DEPTH_BITS, 24);
     glfwWindowHint(GLFW_STENCIL_BITS, 8);
     if (options.frame_limit > 0) {

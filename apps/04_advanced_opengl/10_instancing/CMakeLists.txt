@@ -8,4 +8,8 @@ target_link_libraries(
         glad::glad
         glfw
         glm::glm-header-only
+        stb::stb
+        assimp::assimp
 )
+
+target_compile_definitions(04_advanced_opengl__10_instancing PRIVATE OPENGL_LAB_ASSET_ROOT="${PROJECT_SOURCE_DIR}/assets")

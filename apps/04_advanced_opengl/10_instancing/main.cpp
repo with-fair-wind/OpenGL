@@ -8,10 +8,14 @@
 #include <array>
 #include <charconv>
 #include <cmath>
+#include <cstddef>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <memory>
+#include <random>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -23,6 +27,15 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
+// clang-format off
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
+#include <assimp/Importer.hpp>
+#include <assimp/postprocess.h>
+#include <assimp/scene.h>
+// clang-format on
 
 namespace {
 
@@ -143,6 +156,16 @@ GLuint create_program(gpu_resources& resources, const char* vertex, const char* 
     return program;
 }
 
+/** @brief 必需 uniform 应在链接后缓存，避免每帧进行字符串查询。 */
+GLint uniform_location(GLuint program, const char* name) {
+    // OpenGL: 位置仅在当前链接版本中有效，-1 表示未找到活动变量。
+    const GLint location{glGetUniformLocation(program, name)};
+    if (location < 0) {
+        std::cerr << "Required uniform missing: " << name << '\n';
+    }
+    return location;
+}
+
 /** @brief 创建 VAO/VBO；顶点布局由调用方在返回后明确配置。 */
 GLuint create_vertex_array(gpu_resources& resources, const float* data, GLsizeiptr bytes) {
     GLuint vao{0U};
@@ -164,6 +187,15 @@ GLuint create_vertex_array(gpu_resources& resources, const float* data, GLsizeip
     // OpenGL: 使绘制时从缓冲读取该属性。
     glEnableVertexAttribArray(0);
     return vao;
+}
+
+/** @brief 按键按下边沿触发一次，避免按住时每帧来回切换。 */
+bool key_pressed(GLFWwindow* window, int key, bool& previous) {
+    // GLFW: 查询 GLFW 缓存的按键状态。
+    const bool down{glfwGetKey(window, key) == GLFW_PRESS};
+    const bool pressed{down && !previous};
+    previous = down;
+    return pressed;
 }
 
 /** @brief 记录 OpenGL 错误，并按需在交换前读取默认后缓冲保存 PPM。 */
@@ -206,14 +238,68 @@ bool finish_frame(GLFWwindow* window, const run_options& options, int frame, int
     }
     return success;
 }
+
+// Camera: 复用入门章的键鼠相机；每个示例保留自己的状态与回调。
+glm::vec3 camera_position{0.0F, 1.2F, 5.0F};
+glm::vec3 camera_front{glm::normalize(glm::vec3{0.0F, -0.2F, -1.0F})};
+constexpr glm::vec3 camera_up{0.0F, 1.0F, 0.0F};
+float yaw{-90.0F};
+float pitch{-11.3099F};
+float field_of_view{45.0F};
+double last_x{0.0};
+double last_y{0.0};
+bool first_mouse{true};
+
+/** @brief 鼠标位移转换为角度，限制俯仰以避免视线与上向量平行。 */
+void mouse_callback(GLFWwindow*, double x, double y) {
+    if (first_mouse) {
+        last_x = x;
+        last_y = y;
+        first_mouse = false;
+    }
+    yaw += static_cast<float>(x - last_x) * 0.1F;
+    pitch = std::clamp(pitch + static_cast<float>(last_y - y) * 0.1F, -89.0F, 89.0F);
+    last_x = x;
+    last_y = y;
+    camera_front = glm::normalize(glm::vec3{
+        glm::cos(glm::radians(yaw)) * glm::cos(glm::radians(pitch)), glm::sin(glm::radians(pitch)),
+        glm::sin(glm::radians(yaw)) * glm::cos(glm::radians(pitch))});
+}
+
+/** @brief 滚轮改变透视 FOV，单位为度。 */
+void scroll_callback(GLFWwindow*, double, double offset) {
+    field_of_view = std::clamp(field_of_view - static_cast<float>(offset), 1.0F, 75.0F);
+}
+
+/** @brief 以秒计的帧间隔缩放移动量；暂停后限制单帧位移。 */
+void process_input(GLFWwindow* window, float delta_time) {
+    const float speed{3.0F * std::min(delta_time, 0.1F)};
+    const glm::vec3 right{glm::normalize(glm::cross(camera_front, camera_up))};
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+        camera_position += speed * camera_front;
+    }
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+        camera_position -= speed * camera_front;
+    }
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+        camera_position -= speed * right;
+    }
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+        camera_position += speed * right;
+    }
+}
 constexpr const char* vertex_shader_source{R"glsl(
 #version 330 core
 layout (location = 0) in vec3 a_pos;
 layout (location = 1) in vec2 a_offset;
+uniform vec2 offsets[100];
+uniform bool uniform_offsets;
+uniform bool scale_instances;
 out vec3 vertex_color;
 void main()
 {
-    gl_Position = vec4(a_pos.xy + a_offset, a_pos.z, 1.0);
+    vec2 position = a_pos.xy * (scale_instances ? float(gl_InstanceID)/100.0 : 1.0);
+    gl_Position = vec4(position + (uniform_offsets ? offsets[gl_InstanceID] : a_offset), a_pos.z, 1.0);
     vertex_color = vec3(float(gl_InstanceID % 10) / 9.0, float(gl_InstanceID / 10) / 9.0, 0.7);
 }
 )glsl"};
@@ -226,6 +312,140 @@ void main()
     frag_color = vec4(vertex_color, 1.0);
 }
 )glsl"};
+constexpr const char* asteroid_vertex_source{R"glsl(
+#version 330 core
+layout (location=0) in vec3 a_pos;
+layout (location=1) in vec3 a_normal;
+layout (location=2) in vec2 a_tex_coord;
+layout (location=3) in mat4 a_instance_model;
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
+uniform bool use_instances;
+out vec3 vertex_color;
+void main() {
+    mat4 transform = use_instances ? a_instance_model : model;
+    vec3 normal = normalize(mat3(transpose(inverse(transform))) * a_normal);
+    vertex_color = vec3(0.55,0.48,0.36)*(0.3+0.7*max(dot(normal,normalize(vec3(1,2,3))),0.0));
+    gl_Position = projection*view*transform*vec4(a_pos,1);
+}
+)glsl"};
+
+#ifndef OPENGL_LAB_ASSET_ROOT
+#define OPENGL_LAB_ASSET_ROOT "."
+#endif
+/** @brief stb_image 返回的 CPU 图像在上传后立即释放。 */
+struct stbi_image_deleter {
+    void operator()(unsigned char* pixels) const {
+        stbi_image_free(pixels);
+    }
+};
+/** @brief 纹理路径由编译期资源根定位，不依赖启动目录。 */
+std::filesystem::path asset_path(const char* relative) {
+    return std::filesystem::path{OPENGL_LAB_ASSET_ROOT} / relative;
+}
+
+/** @brief 一个索引网格；实际 GPU 对象由本文件的资源守卫拥有。 */
+struct render_mesh {
+    GLuint vao{0U};
+    GLsizei count{0};
+};
+/** @brief 明确记录位置、法线和 UV，避免把立方体位置猜测为模型法线。 */
+struct vertex {
+    glm::vec3 position{};
+    glm::vec3 normal{};
+    glm::vec2 tex_coord{};
+};
+/** @brief aiMatrix4x4 按行命名，显式转换到 GLM 的列索引。 */
+glm::mat4 node_matrix(const aiMatrix4x4& source) {
+    glm::mat4 result{1.0F};
+    for (int row{0}; row < 4; ++row) {
+        for (int column{0}; column < 4; ++column) {
+            result[column][row] = source[row][column];
+        }
+    }
+    return result;
+}
+/** @brief 递归累积节点变换，复制顶点后不保留 aiScene 指针。 */
+void upload_node(gpu_resources& resources, const aiScene& scene, const aiNode& node,
+                 const glm::mat4& parent, std::vector<render_mesh>& meshes) {
+    const glm::mat4 transform{parent * node_matrix(node.mTransformation)};
+    const glm::mat3 normal_matrix{glm::transpose(glm::inverse(glm::mat3{transform}))};
+    for (unsigned int index{0U}; index < node.mNumMeshes; ++index) {
+        const aiMesh& mesh{*scene.mMeshes[node.mMeshes[index]]};
+        std::vector<vertex> vertices{};
+        std::vector<unsigned int> indices{};
+        vertices.reserve(mesh.mNumVertices);
+        for (unsigned int item{0U}; item < mesh.mNumVertices; ++item) {
+            const auto& p{mesh.mVertices[item]};
+            const auto& n{mesh.mNormals[item]};
+            const glm::vec2 uv{mesh.HasTextureCoords(0) ? glm::vec2{mesh.mTextureCoords[0][item].x,
+                                                                    mesh.mTextureCoords[0][item].y}
+                                                        : glm::vec2{0.0F}};
+            vertices.push_back({glm::vec3{transform * glm::vec4{p.x, p.y, p.z, 1.0F}},
+                                glm::normalize(normal_matrix * glm::vec3{n.x, n.y, n.z}), uv});
+        }
+        for (unsigned int face{0U}; face < mesh.mNumFaces; ++face) {
+            const aiFace& item{mesh.mFaces[face]};
+            indices.insert(indices.end(), item.mIndices, item.mIndices + item.mNumIndices);
+        }
+        render_mesh uploaded{};
+        GLuint vbo{0U};
+        GLuint ebo{0U};
+        glGenVertexArrays(1, &uploaded.vao);
+        glGenBuffers(1, &vbo);
+        glGenBuffers(1, &ebo);
+        resources.arrays.push_back(uploaded.vao);
+        resources.buffers.push_back(vbo);
+        resources.buffers.push_back(ebo);
+        glBindVertexArray(uploaded.vao);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(vertices.size() * sizeof(vertex)),
+                     vertices.data(), GL_STATIC_DRAW);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                     static_cast<GLsizeiptr>(indices.size() * sizeof(unsigned int)), indices.data(),
+                     GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertex),
+                              reinterpret_cast<const void*>(offsetof(vertex, position)));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(vertex),
+                              reinterpret_cast<const void*>(offsetof(vertex, normal)));
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(vertex),
+                              reinterpret_cast<const void*>(offsetof(vertex, tex_coord)));
+        glEnableVertexAttribArray(0);
+        glEnableVertexAttribArray(1);
+        glEnableVertexAttribArray(2);
+        uploaded.count = static_cast<GLsizei>(indices.size());
+        meshes.push_back(uploaded);
+    }
+    for (unsigned int child{0U}; child < node.mNumChildren; ++child) {
+        upload_node(resources, scene, *node.mChildren[child], transform, meshes);
+    }
+}
+/** @brief 复用第三章的 Assimp 节点遍历思路；本章几何交给各示例指定的着色程序处理。 */
+std::vector<render_mesh> load_model(gpu_resources& resources, const char* relative) {
+    Assimp::Importer importer{};
+    const auto path{asset_path(relative)};
+    const aiScene* scene{importer.ReadFile(path.string(), aiProcess_Triangulate |
+                                                              aiProcess_GenSmoothNormals |
+                                                              aiProcess_JoinIdenticalVertices)};
+    if (scene == nullptr || scene->mRootNode == nullptr ||
+        (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) != 0U) {
+        std::cerr << "Model load failed: " << path << ": " << importer.GetErrorString() << '\n';
+        return {};
+    }
+    std::vector<render_mesh> meshes{};
+    upload_node(resources, *scene, *scene->mRootNode, glm::mat4{1.0F}, meshes);
+    return meshes;
+}
+/** @brief 每个网格一个索引绘制，VAO 自己记录 EBO。 */
+void draw_model(const std::vector<render_mesh>& meshes) {
+    for (const render_mesh& mesh : meshes) {
+        // OpenGL: 从 VAO 保存的 EBO 读取索引。
+        glBindVertexArray(mesh.vao);
+        glDrawElements(GL_TRIANGLES, mesh.count, GL_UNSIGNED_INT, nullptr);
+    }
+}
 
 /** @brief 在当前有效上下文内创建资源并运行渲染循环。 */
 int run(GLFWwindow* window, const run_options& options) {
@@ -254,13 +474,68 @@ int run(GLFWwindow* window, const run_options& options) {
     // OpenGL: 除数 1 表示每个实例推进一次此属性。
     glVertexAttribDivisor(1, 1);
 
+    const GLuint asteroid_program{
+        create_program(resources, asteroid_vertex_source, fragment_shader_source)};
+    const auto rocks{load_model(resources, "models/asteroid/rock.obj")};
+    const auto planet{load_model(resources, "models/asteroid/planet.obj")};
+    if (asteroid_program == 0U || rocks.empty() || planet.empty()) {
+        return EXIT_FAILURE;
+    }
+    constexpr std::size_t amount{1000U};
+    std::array<glm::mat4, amount> matrices{};
+    std::mt19937 generator{42U};
+    std::uniform_real_distribution<float> displacement{-1.6F, 1.6F};
+    std::uniform_real_distribution<float> scale_range{0.08F, 0.3F};
+    std::uniform_real_distribution<float> rotation_range{0.0F, 360.0F};
+    for (std::size_t index{0U}; index < amount; ++index) {
+        const float angle{static_cast<float>(index) / static_cast<float>(amount) *
+                          glm::radians(360.0F)};
+        const glm::vec3 position{std::sin(angle) * 10.0F + displacement(generator),
+                                 displacement(generator) * 0.25F,
+                                 std::cos(angle) * 10.0F + displacement(generator)};
+        glm::mat4 model{glm::translate(glm::mat4{1.0F}, position)};
+        model = glm::scale(model, glm::vec3{scale_range(generator)});
+        matrices[index] = glm::rotate(model, glm::radians(rotation_range(generator)),
+                                      glm::normalize(glm::vec3{0.4F, 0.6F, 0.8F}));
+    }
+    GLuint matrix_buffer{0U};
+    glGenBuffers(1, &matrix_buffer);
+    resources.buffers.push_back(matrix_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, matrix_buffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(matrices), matrices.data(), GL_STATIC_DRAW);
+    static_assert(sizeof(glm::mat4) == 4U * sizeof(glm::vec4));
+    for (const render_mesh& mesh : rocks) {
+        glBindVertexArray(mesh.vao);
+        for (GLuint column{0U}; column < 4U; ++column) {
+            const GLuint location{3U + column};
+            glEnableVertexAttribArray(location);
+            glVertexAttribPointer(location, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4),
+                                  reinterpret_cast<const void*>(static_cast<std::size_t>(column) *
+                                                                sizeof(glm::vec4)));
+            glVertexAttribDivisor(location, 1);
+        }
+    }
+    // OpenGL: 后续 uniform 更新和绘制使用此程序。
+    glUseProgram(program);
+    // OpenGL: 将连续 vec2 数组上传到 uniform 数组。
+    glUniform2fv(uniform_location(program, "offsets[0]"), 100, glm::value_ptr(offsets[0]));
+    int mode{options.initial_mode};
+    bool previous_space{false};
+    camera_position = {0.0F, 9.0F, 26.0F};
+    camera_front = glm::normalize(-camera_position);
+    pitch = -19.1F;
+
     int frame{0};
+    // GLFW: 取得单调计时器秒数，用于计算帧间隔。
+    double last_frame_time{glfwGetTime()};
     // GLFW: 检查窗口关闭请求，不在这里销毁上下文。
     while (glfwWindowShouldClose(window) == GLFW_FALSE) {
-        // GLFW: 查询 GLFW 缓存的按键状态。
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
             glfwSetWindowShouldClose(window, GLFW_TRUE);
         }
+        const double now{glfwGetTime()};
+        process_input(window, static_cast<float>(now - last_frame_time));
+        last_frame_time = now;
         int width{0};
         int height{0};
         // GLFW: 取得实际附件像素尺寸，包括高 DPI 比例。
@@ -274,13 +549,58 @@ int run(GLFWwindow* window, const run_options& options) {
         // OpenGL: 设置之后清除颜色缓冲使用的值。
         glClearColor(0.045F, 0.06F, 0.09F, 1.0F);
 
+        if (key_pressed(window, GLFW_KEY_SPACE, previous_space)) {
+            mode = (mode + 1) % 5;
+        }
         // OpenGL: 清除已绑定绘制帧缓冲；清除受相关写掩码限制。
-        glClear(GL_COLOR_BUFFER_BIT);
-        // OpenGL: 后续 uniform 更新和绘制使用此程序。
-        glUseProgram(program);
-        glBindVertexArray(vao);
-        // OpenGL: 一次提交多个实例；顶点和实例属性按照各自除数读取。
-        glDrawArraysInstanced(GL_TRIANGLES, 0, 6, static_cast<GLsizei>(offsets.size()));
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        if (mode < 2 || mode == 4) {
+            // OpenGL: 关闭指定状态；多阶段绘制结束后恢复下一阶段的前置条件。
+            glDisable(GL_DEPTH_TEST);
+            glUseProgram(program);
+            glBindVertexArray(vao);
+            // OpenGL: 写入标量整型或布尔 uniform；sampler 接收纹理单元索引。
+            glUniform1i(uniform_location(program, "uniform_offsets"),
+                        mode == 1 ? GL_TRUE : GL_FALSE);
+            // OpenGL: 一次提交多个实例；顶点和实例属性按照各自除数读取。
+            glUniform1i(uniform_location(program, "scale_instances"),
+                        mode == 4 ? GL_TRUE : GL_FALSE);
+            glDrawArraysInstanced(GL_TRIANGLES, 0, 6, static_cast<GLsizei>(offsets.size()));
+        } else {
+            // OpenGL: 启用当前示例所需的固定功能状态。
+            glEnable(GL_DEPTH_TEST);
+            glUseProgram(asteroid_program);
+            const glm::mat4 view{
+                glm::lookAt(camera_position, camera_position + camera_front, camera_up)};
+            const glm::mat4 projection{glm::perspective(
+                glm::radians(field_of_view), static_cast<float>(width) / static_cast<float>(height),
+                0.1F, 100.0F)};
+            // OpenGL: GLM 按列存储矩阵，GL_FALSE 表示不转置。
+            glUniformMatrix4fv(uniform_location(asteroid_program, "view"), 1, GL_FALSE,
+                               glm::value_ptr(view));
+            glUniformMatrix4fv(uniform_location(asteroid_program, "projection"), 1, GL_FALSE,
+                               glm::value_ptr(projection));
+            const GLint model_uniform{uniform_location(asteroid_program, "model")};
+            const GLint instanced_uniform{uniform_location(asteroid_program, "use_instances")};
+            const glm::mat4 planet_model{glm::scale(glm::mat4{1.0F}, glm::vec3{2.5F})};
+            glUniform1i(instanced_uniform, GL_FALSE);
+            glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(planet_model));
+            draw_model(planet);
+            if (mode == 2) {
+                for (const auto& model : matrices) {
+                    glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+                    draw_model(rocks);
+                }
+            } else {
+                glUniform1i(instanced_uniform, GL_TRUE);
+                for (const render_mesh& mesh : rocks) {
+                    glBindVertexArray(mesh.vao);
+                    // OpenGL: 对当前索引网格重复绘制实例，实例属性由 divisor 推进。
+                    glDrawElementsInstanced(GL_TRIANGLES, mesh.count, GL_UNSIGNED_INT, nullptr,
+                                            static_cast<GLsizei>(amount));
+                }
+            }
+        }
         ++frame;
         if (!finish_frame(window, options, frame, width, height)) {
             return EXIT_FAILURE;
@@ -310,8 +630,8 @@ int main(int argc, char** argv) {
             const auto [end, error]{
                 std::from_chars(value.data(), value.data() + value.size(), options.initial_mode)};
             if (error != std::errc{} || end != value.data() + value.size() ||
-                options.initial_mode < 0 || options.initial_mode >= 1) {
-                std::cerr << "--mode must be in [0, " << 1 - 1 << "]\n";
+                options.initial_mode < 0 || options.initial_mode >= 5) {
+                std::cerr << "--mode must be in [0, " << 4 - 1 << "]\n";
                 return EXIT_FAILURE;
             }
         } else if (argument == "--capture" && index + 1 < argc) {
@@ -364,7 +684,12 @@ int main(int argc, char** argv) {
     }
     // GLFW: 注册物理像素尺寸变化通知。
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-
+    // GLFW: 注册鼠标移动回调以更新视角。
+    glfwSetCursorPosCallback(window, mouse_callback);
+    // GLFW: 注册滚轮回调以修改 FOV。
+    glfwSetScrollCallback(window, scroll_callback);
+    // GLFW: 捕获鼠标以支持连续第一人称视角。
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     // GLFW: 请求与显示刷新同步，避免无界空转。
     glfwSwapInterval(1);
     // OpenGL: 读取当前驱动标识用于冒烟日志。

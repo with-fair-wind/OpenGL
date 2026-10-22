@@ -8,10 +8,14 @@
 #include <array>
 #include <charconv>
 #include <cmath>
+#include <cstddef>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <memory>
+#include <random>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -399,13 +403,15 @@ int run(GLFWwindow* window, const run_options& options) {
         // OpenGL: 将掩码后的参考值与存储模板值进行比较。
         glStencilFunc(GL_ALWAYS, 1, 0xFFU);
         glStencilMask(0xFFU);
-        draw_cube(uniforms, {0.0F, -0.2F, 0.0F}, {1.0F, 1.0F, 1.0F}, {0.15F, 0.65F, 0.8F, 1.0F});
+        draw_cube(uniforms, {-0.9F, -0.2F, 0.0F}, {1.0F, 1.0F, 1.0F}, {0.15F, 0.65F, 0.8F, 1.0F});
+        draw_cube(uniforms, {0.9F, -0.2F, -1.0F}, {1.0F, 1.0F, 1.0F}, {0.15F, 0.65F, 0.8F, 1.0F});
         glStencilFunc(GL_NOTEQUAL, 1, 0xFFU);
         glStencilMask(0x00U);
         // OpenGL: 本例选择可穿透遮挡的轮廓；保留深度测试可让轮廓参与场景遮挡。
         // OpenGL: 关闭指定状态；多阶段绘制结束后恢复下一阶段的前置条件。
         glDisable(GL_DEPTH_TEST);
-        draw_cube(uniforms, {0.0F, -0.2F, 0.0F}, {1.08F, 1.08F, 1.08F}, {1.0F, 0.65F, 0.1F, 1.0F});
+        draw_cube(uniforms, {-0.9F, -0.2F, 0.0F}, {1.08F, 1.08F, 1.08F}, {1.0F, 0.65F, 0.1F, 1.0F});
+        draw_cube(uniforms, {0.9F, -0.2F, -1.0F}, {1.08F, 1.08F, 1.08F}, {1.0F, 0.65F, 0.1F, 1.0F});
         glEnable(GL_DEPTH_TEST);
         glStencilFunc(GL_ALWAYS, 0, 0xFFU);
         glStencilMask(0xFFU);
