@@ -2,7 +2,7 @@
 
 ## 项目概述
 
-OpenGL Lab 是一个基于 C++23、CMake ≥ 3.28 和 Conan 2 的 LearnOpenGL（http://learnopengl.com）学习仓库，目标平台为 Windows。每个示例是独立可执行程序，按教程章节分组。当前代码进度：`01_getting_started`（7 例 + 03_shaders 3 个练习目标）、`02_lighting`（6 例）、`03_model_loading`（3 例）与 `04_advanced_opengl`（11 例、46 个模式）；现有配套教程文件共 30 篇。第 04 章按官方中文上游固定提交 `331560886468e28f28326429334fc48470f9c27b` 重修，74 项标题及非标题教学内容对应见 `docs/04_advanced_opengl/coverage.md`；前 01–03 章尚需按加强后的逐项契约另行核验。无 CI、无测试框架（尚未配置）。
+OpenGL Lab 是一个基于 C++23、CMake ≥ 3.28 和 Conan 2 的 LearnOpenGL（http://learnopengl.com）学习仓库，目标平台为 Windows。每个示例是独立可执行程序，按教程章节分组。当前代码进度：`01_getting_started`（7 例 + 03_shaders 3 个练习目标）、`02_lighting`（6 例）、`03_model_loading`（3 例）与 `04_advanced_opengl`（11 例、48 个模式）；现有配套教程文件共 30 篇。第 04 章按官方中文上游固定提交 `331560886468e28f28326429334fc48470f9c27b` 重修，74 项标题及非标题教学内容对应见 `docs/04_advanced_opengl/coverage.md`；前 01–03 章尚需按加强后的逐项契约另行核验。无 CI、无测试框架（尚未配置）。
 
 ## 架构与数据流
 
@@ -18,7 +18,7 @@ OpenGL Lab 是一个基于 C++23、CMake ≥ 3.28 和 Conan 2 的 LearnOpenGL（
 - `apps/01_getting_started/` — 入门章节 7 例：`01_hello_window`（无 OpenGL 对象）… `07_camera`（EBO/纹理/变换/坐标系/第一人称相机逐步引入）。
 - `apps/02_lighting/` — 光照章节 6 例：`01_colors` … `06_multiple_lights`（Phong 光照、材质/光源 struct uniform、光照贴图、点光源衰减、多光源数组 uniform）。`03_shaders` 下另有 `exercise1-3.cpp` 练习目标。
 - `apps/03_model_loading/` — 模型加载章节 3 例：`01_assimp`（导入 OBJ、打印 aiScene 统计、沿 aiNode 节点树递归渲染、法线可视化着色）、`02_mesh`（Vertex/Mesh 结构 + make/draw/destroy 函数封装）、`03_model`（Model 递归加载多 mesh/多材质，贴图相对模型目录解析，无贴图回退 1x1 纯色纹理）。
-- `apps/04_advanced_opengl/` — 高级 OpenGL 11 例、46 模式：深度测试、双物体模板轮廓、RGBA 草/玻璃、面剔除、完整卷积后处理、照片天空盒/模型环境映射、高级缓冲数据、内建变量/四程序 UBO、几何房子/模型爆破/法线、矩阵实例化小行星、默认与离屏 MSAA/逐样本解析。helper 仍复制在匿名命名空间；复用已有 stb/Assimp 包，不新增 Conan 包。支持 `--frames N` 隐藏窗口冒烟、`--mode M` 选择初始模式、`--capture path.ppm` 保存末帧；来源见 `docs/img/04/README.md` 与 `assets/chapter04_resources.md`。
+- `apps/04_advanced_opengl/` — 高级 OpenGL 11 例、48 模式：深度测试、双物体模板轮廓、RGBA 草/玻璃、面剔除、完整卷积后处理、照片天空盒/模型环境映射、高级缓冲数据、内建变量/四程序 UBO、几何房子/模型爆破/法线、矩阵实例化小行星、默认与离屏 MSAA/逐样本解析。helper 仍复制在匿名命名空间；复用已有 stb/Assimp 包，不新增 Conan 包。支持 `--frames N` 隐藏窗口冒烟、`--mode M` 选择初始模式、`--capture path.ppm` 保存末帧；来源见 `docs/img/04/README.md` 与 `assets/chapter04_resources.md`。
 - `cmake/` — `OpenGLLabOptions.cmake`：公共选项、C++23 标准、警告标志、clangd compile_commands 镜像目标。
 - `conan/` — `conanfile.py` 在仓库根（不在 conan/ 下）；`conan/profiles/` 存 7 个 Conan profile（mingw-gcc、mingw-clang、msvc-ninja、msvc-ninja-multi、clang-cl、clang-cl-ninja-multi、msvc-vs2026）。
 - `assets/textures/` — 3 个 PPM、草叶/玻璃 PNG 与 `skybox/` 六张 JPG；`assets/models/` — `crate/`（单 mesh 立方体 + 木箱贴图）、`stage/`（地面/箱子/八面体 3 mesh 3 材质，八面体无贴图演示回退）、`asteroid/`（自制行星/岩石 OBJ，供矩阵实例化）。第 04 章资源来源见 `assets/chapter04_resources.md`。

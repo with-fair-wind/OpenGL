@@ -382,6 +382,16 @@ int run(GLFWwindow* window, const run_options& options) {
     }
     int depth_mode{options.initial_mode};
     bool previous_space{false};
+    const auto position_conflict_camera = [] {
+        // Camera: 从第一个箱子内部向下观察箱底与地板，两个对照模式使用相同视角。
+        camera_position = {-0.65F, -0.35F, 0.15F};
+        camera_front = glm::normalize(glm::vec3{0.25F, -1.0F, -0.35F});
+        yaw = glm::degrees(std::atan2(camera_front.z, camera_front.x));
+        pitch = glm::degrees(std::asin(camera_front.y));
+    };
+    if (depth_mode >= 4) {
+        position_conflict_camera();
+    }
 
     int frame{0};
     // GLFW: 取得单调计时器秒数，用于计算帧间隔。
@@ -407,28 +417,35 @@ int run(GLFWwindow* window, const run_options& options) {
         // OpenGL: 设置之后清除颜色缓冲使用的值。
         glClearColor(0.045F, 0.06F, 0.09F, 1.0F);
 
+        if (key_pressed(window, GLFW_KEY_SPACE, previous_space)) {
+            depth_mode = (depth_mode + 1) % 6;
+            if (depth_mode >= 4) {
+                position_conflict_camera();
+            }
+        }
+
         glUseProgram(program);
         glBindVertexArray(vao);
         const glm::mat4 view{
             glm::lookAt(camera_position, camera_position + camera_front, camera_up)};
-        const glm::mat4 projection{
-            glm::perspective(glm::radians(field_of_view),
-                             static_cast<float>(width) / static_cast<float>(height), 0.1F, 100.0F)};
+        const glm::mat4 projection{glm::perspective(
+            glm::radians(field_of_view), static_cast<float>(width) / static_cast<float>(height),
+            depth_mode >= 4 ? 0.001F : 0.1F, 100.0F)};
         glUniformMatrix4fv(uniforms.view, 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(uniforms.projection, 1, GL_FALSE, glm::value_ptr(projection));
 
-        if (key_pressed(window, GLFW_KEY_SPACE, previous_space)) {
-            depth_mode = (depth_mode + 1) % 4;
-        }
         glDepthFunc(depth_mode == 3 ? GL_ALWAYS : GL_LESS);
         // OpenGL: 写入标量整型或布尔 uniform；sampler 接收纹理单元索引。
-        glUniform1i(depth_mode_uniform, depth_mode == 3 ? 0 : depth_mode);
+        glUniform1i(depth_mode_uniform, depth_mode == 1 || depth_mode == 2 ? depth_mode : 0);
         // OpenGL: 清除已绑定绘制帧缓冲；清除受相关写掩码限制。
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        draw_cube(uniforms, {-0.8F, -0.25F, 0.0F}, {1.0F, 1.0F, 1.0F}, {1.0F, 0.48F, 0.2F, 1.0F});
+        const float box_y{depth_mode == 5 ? -0.22F : -0.25F};
+        draw_cube(uniforms, {-0.8F, box_y, 0.0F}, {1.0F, 1.0F, 1.0F}, {1.0F, 0.48F, 0.2F, 1.0F});
         draw_cube(uniforms, {0.8F, -0.25F, -1.3F}, {1.0F, 1.0F, 1.0F}, {0.15F, 0.7F, 0.85F, 1.0F});
-        draw_cube(uniforms, {0.0F, -0.85F, 0.0F}, {6.0F, 0.1F, 6.0F}, {0.25F, 0.3F, 0.4F, 1.0F});
+        // OpenGL: 模式 4 的地板顶面与箱底同为 y=-0.75；模式 5 将箱子抬高 0.03。
+        const float floor_y{depth_mode >= 4 ? -0.80F : -0.85F};
+        draw_cube(uniforms, {0.0F, floor_y, 0.0F}, {6.0F, 0.1F, 6.0F}, {0.25F, 0.3F, 0.4F, 1.0F});
         ++frame;
         if (!finish_frame(window, options, frame, width, height)) {
             return EXIT_FAILURE;
@@ -458,8 +475,8 @@ int main(int argc, char** argv) {
             const auto [end, error]{
                 std::from_chars(value.data(), value.data() + value.size(), options.initial_mode)};
             if (error != std::errc{} || end != value.data() + value.size() ||
-                options.initial_mode < 0 || options.initial_mode >= 4) {
-                std::cerr << "--mode must be in [0, " << 4 - 1 << "]\n";
+                options.initial_mode < 0 || options.initial_mode >= 6) {
+                std::cerr << "--mode must be in [0, " << 6 - 1 << "]\n";
                 return EXIT_FAILURE;
             }
         } else if (argument == "--capture" && index + 1 < argc) {

@@ -106,11 +106,12 @@ divisor 为 0 时按顶点推进，是普通属性的默认状态；为 1 时每
 $$\theta_i=2\pi\frac{i}{N},\quad x_i=r\sin\theta_i+\delta_x,\quad
 z_i=r\cos\theta_i+\delta_z,\quad y_i=0.25\delta_y.$$
 
-本例半径 10、位移范围 ±1.6、比例 0.08–0.3。GLM 连乘形成 $T\,S\,R$，作用到列向量时从右向左执行；不要把代码调用顺序等同顶点实际受变换顺序。完整生成代码：
+本例半径 10、位移范围 ±1.6、比例 0.08–0.3。GLM 连乘形成 $T\,S\,R$，作用到列向量时从右向左执行；不要把代码调用顺序等同顶点实际受变换顺序。矩阵数组使用 `std::vector` 管理堆存储，十万个 `mat4` 约占 6.4 MB，不占用同等大小的线程栈。上传长度应按 `matrices.size() * sizeof(glm::mat4)` 计算，不能使用容器对象自身的 `sizeof`。完整生成代码：
 
 ```cpp
     constexpr std::size_t amount{1000U};
-    std::array<glm::mat4, amount> matrices{};
+    // 实例数量可提高到十万；矩阵存储放在堆上，避免耗尽 Windows 线程栈。
+    std::vector<glm::mat4> matrices(amount, glm::mat4{1.0F});
     std::mt19937 generator{42U};
     std::uniform_real_distribution<float> displacement{-1.6F, 1.6F};
     std::uniform_real_distribution<float> scale_range{0.08F, 0.3F};
@@ -143,7 +144,8 @@ z_i=r\cos\theta_i+\delta_z,\quad y_i=0.25\delta_y.$$
     glGenBuffers(1, &matrix_buffer);
     resources.buffers.push_back(matrix_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, matrix_buffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(matrices), matrices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(matrices.size() * sizeof(glm::mat4)),
+                 matrices.data(), GL_STATIC_DRAW);
     static_assert(sizeof(glm::mat4) == 4U * sizeof(glm::vec4));
     for (const render_mesh& mesh : rocks) {
         glBindVertexArray(mesh.vao);
@@ -216,6 +218,8 @@ void main() {
 ## 本仓库示例
 
 源码：[`main.cpp`](../../apps/04_advanced_opengl/10_instancing/main.cpp)，目标：`04_advanced_opengl__10_instancing`。正文标为源码的 C++/GLSL 均直接摘取此文件；标为概念说明的独立片段用于说明规范或未启用的更高版本功能。
+
+初始化时按各 program 查询并缓存必需 uniform，任一位置为 -1 就报告失败并返回非零；渲染循环只使用已经检查的位置。位置属于具体 program，不能跨程序复用；也不能仅等待帧末 OpenGL 错误检查，因为 `glUniform*` 对位置 -1 会静默忽略更新。
 
 ```powershell
 cmake --preset mingw-gcc-debug

@@ -5,10 +5,24 @@
 ## 验收范围
 
 - 内容：逐节核对概念、公式/推导、参数与状态含义、案例过程、注意事项、原有练习和资源；下面列出全部标题映射，并另列非标题条目。
-- 实现：11 个独立目标、46 个启动模式。MinGW GCC Debug configure/build 通过，NVIDIA GeForce GTX 1660 上各模式运行 3 帧、保存 PPM、转换 PNG 并检查合成图；运行时包含 shader/链接、资源加载、FBO 和 GL 错误检查。
+- 实现：11 个独立目标、48 个启动模式。MinGW GCC Debug configure/build 通过，NVIDIA GeForce GTX 1660 上各模式运行 3 帧、保存 PPM、转换 PNG 并检查合成图；运行时包含 shader/链接、资源加载、FBO 和 GL 错误检查。
 - 格式：C++/GLSL 代码块均与各篇指定 `main.cpp` 连续文本逐字匹配；本地文件/图片/锚点、GFM、全景图、回顾和下一节链另外校验。
 - 未验证范围：其他 preset/显卡的实际运行、完整键鼠/缩放交互、性能基准；不以本次功能检查声称任何固定 FPS 或跨平台性能收益。
 - 原有练习仍标为练习：反向环绕顶点、后视镜、反射遮罩和自选滤镜。动态环境捕获和保守深度等原文概念按原深度解释；动态捕获不冒称已实现，4.2 功能不冒充 3.3 核心功能。
+
+## 2026-10-22 复核问题修正
+
+以下记录针对本次复核发现的五项问题，不用有限帧成功替代上游内容核验。
+
+| 问题 | 修正与验证 |
+| --- | --- |
+| 十万实例栈溢出 | `10_instancing` 改用堆上的 vector；上传长度按元素数乘矩阵大小计算。隔离源码副本只将 amount 从 1000 改为 100000，模式 3 运行 3 帧成功，无 stderr。 |
+| 必需 uniform 缺失仍返回成功 | 09/10/11 的相关查询移至初始化并检查，渲染时使用缓存。分别将 time_seconds、use_instances、sample_count 的 CPU 查询名称改错，三个隔离副本均报告缺失并返回非零。 |
+| 共面深度冲突案例缺失 | 01 增加模式 4/5、箱内预置视角、相同投影下的共面/分离几何及实测截图；恢复原案例的复现步骤。 |
+| 独立物体轮廓提示遗漏 | 02 恢复逐物体清模板与深度处理的原提示，并补充选中标记、模糊轮廓、后视镜和阴影体积的应用说明；这些扩展不冒称已运行实现。 |
+| 混合图文数值不一致 | 03 改为与原图一致的绿色 alpha=0.6 覆盖红色，逐项写出贡献及结果 (0.4,0.6,0)。 |
+
+修正后 11 个目标、48 个模式均在 MinGW GCC Debug / GTX 1660 上运行 3 帧并保存末帧；新增共面/分离截图另行目视核对。故障注入和十万实例检查只修改隔离副本，仓库默认实例数仍为 1000，不据此声称十万实例的性能基准。
 
 ## 逐小节对应
 
@@ -21,12 +35,12 @@
 
 | 上游标题（原级别） | 本地对应 | 源码/模式与内容项 | 图示/公式 | 状态 |
 | --- | --- | --- | --- | --- |
-| # 深度测试 | [深度测试](01_depth_testing.md#深度测试)（H1） | `01_depth_testing`：0–3 | `depth_testing_func_always.png`、`depth_testing_func_less.png`、`depth_linear_graph.png`、`depth_non_linear_graph.png`、`depth_testing_visible_depth.png`、`depth_testing_visible_linear.png`、`depth_testing_z_fighting.png`、`01_depth_testing.png`；公式：展示3组/行内27处 | 已覆盖；相关模式通过 |
+| # 深度测试 | [深度测试](01_depth_testing.md#深度测试)（H1） | `01_depth_testing`：0–5 | `depth_testing_func_always.png`、`depth_testing_func_less.png`、`depth_linear_graph.png`、`depth_non_linear_graph.png`、`depth_testing_visible_depth.png`、`depth_testing_visible_linear.png`、`depth_testing_z_fighting.png`、`01_depth_testing.png`；公式：展示3组/行内27处 | 已覆盖；相关模式通过 |
 | ## 深度测试函数 | [深度测试函数](01_depth_testing.md#深度测试函数)（H2） | `01_depth_testing`：0 / 3；其他比较见表 | `depth_testing_func_always.png`、`depth_testing_func_less.png`；公式：展示0组/行内8处 | 已覆盖；相关模式通过 |
 | ## 深度值精度 | [深度值精度](01_depth_testing.md#深度值精度)（H2） | `01_depth_testing`：1 / 2；投影推导 | `depth_linear_graph.png`、`depth_non_linear_graph.png`；公式：展示2组/行内12处 | 已覆盖（概念） |
 | ## 深度缓冲的可视化 | [深度缓冲的可视化](01_depth_testing.md#深度缓冲的可视化)（H2） | `01_depth_testing`：1 / 2 | `depth_testing_visible_depth.png`、`depth_testing_visible_linear.png`；公式：展示1组/行内6处 | 已覆盖；相关模式通过 |
-| ## 深度冲突 | [深度冲突](01_depth_testing.md#深度冲突)（H2） | `01_depth_testing`：共面案例的原理与图示 | `depth_testing_z_fighting.png` | 已覆盖（概念） |
-| ### 防止深度冲突 | [防止深度冲突](01_depth_testing.md#防止深度冲突)（H3） | `01_depth_testing`：三类解决方案，概念 | 见正文 API/状态表、代码或概念步骤；本节无独立图 | 已覆盖（概念） |
+| ## 深度冲突 | [深度冲突](01_depth_testing.md#深度冲突)（H2） | `01_depth_testing`：4；箱内视角、共面高度与复现步骤 | `depth_testing_z_fighting.png`、`depth_conflict.png` | 已补齐；相关模式通过 |
+| ### 防止深度冲突 | [防止深度冲突](01_depth_testing.md#防止深度冲突)（H3） | `01_depth_testing`：5；抬高箱子消除共面，另保留近裁剪距离与深度格式说明 | `depth_separated.png`、几何高度源码 | 已补齐；几何对照模式通过 |
 
 图片/公式：`depth_testing_func_always.png`、`depth_testing_func_less.png`、`depth_linear_graph.png`、`depth_non_linear_graph.png`、`depth_testing_visible_depth.png`、`depth_testing_visible_linear.png`、`depth_testing_z_fighting.png`
 
@@ -41,7 +55,7 @@
 | --- | --- | --- | --- | --- |
 | # 模板测试 | [模板测试](02_stencil_testing.md#模板测试)（H1） | `02_stencil_testing`：0 | `stencil_buffer.png`、`stencil_object_outlining.png`、`stencil_scene_outlined.png`、`02_stencil_testing.png`；公式：展示0组/行内9处 | 已覆盖；相关模式通过 |
 | ## 模板函数 | [模板函数](02_stencil_testing.md#模板函数)（H2） | `02_stencil_testing`：0；比较/操作完整表 | ；公式：展示0组/行内9处 | 已覆盖；相关模式通过 |
-| # 物体轮廓 | [物体轮廓](02_stencil_testing.md#物体轮廓)（H2） | `02_stencil_testing`：0；双物体八步 | `stencil_object_outlining.png`、`stencil_scene_outlined.png` | 已覆盖；相关模式通过 |
+| # 物体轮廓 | [物体轮廓](02_stencil_testing.md#物体轮廓)（H2） | `02_stencil_testing`：0；双物体八步；另保留逐物体清模板与深度配合提示 | `stencil_object_outlining.png`、`stencil_scene_outlined.png` | 已覆盖；相关模式通过 |
 
 图片/公式：`stencil_buffer.png`、`stencil_object_outlining.png`、`stencil_scene_outlined.png`
 

@@ -297,7 +297,7 @@ build/msvc-vs2026/OpenGLLab.sln
 
 | 示例目录 | 目标名称 | 空格切换 |
 | --- | --- | --- |
-| `01_depth_testing` | `04_advanced_opengl__01_depth_testing` | LESS 场景 / 原始深度 / 线性距离 / ALWAYS 对照 |
+| `01_depth_testing` | `04_advanced_opengl__01_depth_testing` | LESS 场景 / 原始深度 / 线性距离 / ALWAYS 对照 / 共面冲突 / 抬高箱子对照 |
 | `02_stencil_testing` | `04_advanced_opengl__02_stencil_testing` | — |
 | `03_blending` | `04_advanced_opengl__03_blending` | 排序玻璃 / 未排序且写深度 / 草叶不丢弃 / 草叶丢弃 |
 | `04_face_culling` | `04_advanced_opengl__04_face_culling` | CCW / CW 正面定义 |

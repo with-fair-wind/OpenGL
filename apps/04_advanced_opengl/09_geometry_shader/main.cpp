@@ -572,6 +572,22 @@ void draw_model(const std::vector<render_mesh>& meshes) {
     }
 }
 
+/** @brief 每个模型程序分别缓存矩阵位置；位置不能在不同 program 间复用。 */
+struct model_uniforms {
+    GLint model{-1};
+    GLint view{-1};
+    GLint projection{-1};
+    [[nodiscard]] bool valid() const {
+        return model >= 0 && view >= 0 && projection >= 0;
+    }
+};
+
+/** @brief 在渲染前检查模型阶段使用的全部矩阵参数。 */
+model_uniforms find_model_uniforms(GLuint program) {
+    return {uniform_location(program, "model"), uniform_location(program, "view"),
+            uniform_location(program, "projection")};
+}
+
 /** @brief 在当前有效上下文内创建资源并运行渲染循环。 */
 int run(GLFWwindow* window, const run_options& options) {
     gpu_resources resources{};
@@ -596,6 +612,19 @@ int run(GLFWwindow* window, const run_options& options) {
                                                normal_fragment_source, normal_geometry_source)};
     if (base_program == 0U || points_program == 0U || line_program == 0U || model_program == 0U ||
         normal_program == 0U) {
+        return EXIT_FAILURE;
+    }
+    const model_uniforms explode_matrices{find_model_uniforms(model_program)};
+    const model_uniforms base_matrices{find_model_uniforms(base_program)};
+    const model_uniforms normal_matrices{find_model_uniforms(normal_program)};
+    const GLint house_mode_uniform{uniform_location(program, "house_mode")};
+    const GLint explode_uniform{uniform_location(model_program, "explode")};
+    const GLint time_uniform{uniform_location(model_program, "time_seconds")};
+    const GLint model_texture_uniform{uniform_location(model_program, "surface_texture")};
+    const GLint base_texture_uniform{uniform_location(base_program, "surface_texture")};
+    if (!explode_matrices.valid() || !base_matrices.valid() || !normal_matrices.valid() ||
+        house_mode_uniform < 0 || explode_uniform < 0 || time_uniform < 0 ||
+        model_texture_uniform < 0 || base_texture_uniform < 0) {
         return EXIT_FAILURE;
     }
     const auto meshes{load_model(resources, "models/crate/crate.obj")};
@@ -656,7 +685,7 @@ int run(GLFWwindow* window, const run_options& options) {
             glBindVertexArray(vao);
             // OpenGL: 写入标量整型或布尔 uniform；sampler 接收纹理单元索引。
             if (mode == 0 || mode == 3 || mode == 6) {
-                glUniform1i(uniform_location(program, "house_mode"), mode);
+                glUniform1i(house_mode_uniform, mode);
             }
             // OpenGL: 按照当前 VAO 和程序解释顶点并提交图元。
             glDrawArrays(GL_POINTS, 0, 4);
@@ -668,31 +697,28 @@ int run(GLFWwindow* window, const run_options& options) {
             const glm::mat4 projection{glm::perspective(
                 glm::radians(field_of_view), static_cast<float>(width) / static_cast<float>(height),
                 0.1F, 100.0F)};
-            const auto set_matrices = [&](GLuint active) {
+            const auto set_matrices = [&](GLuint active, const model_uniforms& uniforms) {
                 glUseProgram(active);
                 // OpenGL: GLM 按列存储矩阵，GL_FALSE 表示不转置。
-                glUniformMatrix4fv(uniform_location(active, "model"), 1, GL_FALSE,
-                                   glm::value_ptr(model));
-                glUniformMatrix4fv(uniform_location(active, "view"), 1, GL_FALSE,
-                                   glm::value_ptr(view));
-                glUniformMatrix4fv(uniform_location(active, "projection"), 1, GL_FALSE,
-                                   glm::value_ptr(projection));
+                glUniformMatrix4fv(uniforms.model, 1, GL_FALSE, glm::value_ptr(model));
+                glUniformMatrix4fv(uniforms.view, 1, GL_FALSE, glm::value_ptr(view));
+                glUniformMatrix4fv(uniforms.projection, 1, GL_FALSE, glm::value_ptr(projection));
             };
             const GLuint surface_program{mode == 5 ? base_program : model_program};
-            set_matrices(surface_program);
+            set_matrices(surface_program, mode == 5 ? base_matrices : explode_matrices);
             if (mode == 4) {
-                glUniform1i(uniform_location(model_program, "explode"), GL_TRUE);
+                glUniform1i(explode_uniform, GL_TRUE);
                 // OpenGL: 向当前模型程序上传以秒计的爆破相位，截图使用固定值。
-                glUniform1f(uniform_location(model_program, "time_seconds"),
+                glUniform1f(time_uniform,
                             options.frame_limit > 0 ? 0.7F : static_cast<float>(glfwGetTime()));
             }
             // OpenGL: 激活与 surface_texture 的整数单元索引对应的纹理单元。
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, surface);
-            glUniform1i(uniform_location(surface_program, "surface_texture"), 0);
+            glUniform1i(mode == 5 ? base_texture_uniform : model_texture_uniform, 0);
             draw_model(meshes);
             if (mode == 5) {
-                set_matrices(normal_program);
+                set_matrices(normal_program, normal_matrices);
                 draw_model(meshes);
             }
         }

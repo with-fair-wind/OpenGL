@@ -601,6 +601,12 @@ int run(GLFWwindow* window, const run_options& options) {
     if (resolve_program == 0U) {
         return EXIT_FAILURE;
     }
+    const GLint multisample_texture_uniform{
+        uniform_location(resolve_program, "multisample_texture")};
+    const GLint sample_count_uniform{uniform_location(resolve_program, "sample_count")};
+    if (multisample_texture_uniform < 0 || sample_count_uniform < 0) {
+        return EXIT_FAILURE;
+    }
     GLint default_samples{0};
     glGetIntegerv(GL_SAMPLES, &default_samples);
     std::cout << "Default framebuffer samples: " << default_samples << '\n';
@@ -669,8 +675,8 @@ int run(GLFWwindow* window, const run_options& options) {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texture_target.color);
             // OpenGL: 写入标量整型或布尔 uniform；sampler 接收纹理单元索引。
-            glUniform1i(uniform_location(resolve_program, "multisample_texture"), 0);
-            glUniform1i(uniform_location(resolve_program, "sample_count"), samples);
+            glUniform1i(multisample_texture_uniform, 0);
+            glUniform1i(sample_count_uniform, samples);
             glBindVertexArray(screen_vao);
             glDrawArrays(GL_TRIANGLES, 0, 6);
         } else {

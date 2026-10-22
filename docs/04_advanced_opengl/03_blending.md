@@ -105,7 +105,7 @@ $$C_{out}=C_sF_s+C_dF_d.$$
 
 ![上游教学图：blending_equation.png](../img/04/03/blending_equation.png)
 
-对于非预乘 alpha，常见 RGB 系数是 $F_s=\alpha_s$、$F_d=1-\alpha_s$。红色源 `(1,0,0,0.5)` 覆盖蓝色目标 `(0,0,1,1)`，RGB 得 `(0.5,0,0.5)`。源与目标来自当前片段和附件，不表示固定的某两个物体。
+对于非预乘 alpha，常见 RGB 系数是 $F_s=\alpha_s$、$F_d=1-\alpha_s$。与上下两图一致，绿色源 `(0,1,0,0.6)` 覆盖红色目标 `(1,0,0,1)`：源 RGB 贡献 `(0,0.6,0)`，目标贡献 `(0.4,0,0)`，相加得到 `(0.4,0.6,0)`。源与目标来自当前片段和附件，不表示固定的某两个物体。
 
 ![上游教学图：blending_equation_mixed.png](../img/04/03/blending_equation_mixed.png)
 

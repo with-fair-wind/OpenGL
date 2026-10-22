@@ -74,10 +74,12 @@
 
 ## 本仓库实测图
 
-每个节号目录中的 `<NN>_<slug>.png` 是该节当前模式 0 的实测截图。MinGW GCC Debug、NVIDIA GeForce GTX 1660，运行参数 `--frames 3 --mode 0 --capture path.ppm`，在交换之前读回默认后缓冲，再无损转为 PNG。全部 46 模式还生成了本地检查用合成图，未将 build 产物加入版本控制。截图只证明本次功能与外观，不证明键鼠交互、其他工具链和性能数据。
+每个节号目录中的 `<NN>_<slug>.png` 是该节当前模式 0 的实测截图。MinGW GCC Debug、NVIDIA GeForce GTX 1660，运行参数 `--frames 3 --mode 0 --capture path.ppm`，在交换之前读回默认后缓冲，再无损转为 PNG。首次对齐时的 46 个模式还生成了本地检查用合成图，未将 build 产物加入版本控制。截图只证明本次功能与外观，不证明键鼠交互、其他工具链和性能数据。
 
 ## 程序资源
 
 草叶和玻璃 PNG 从本表 `03/grass.png`、`03/blending_transparent_window.png` 原样复制到 `assets/textures/`，供 stb_image 实际加载。天空盒六张照片来自 [JoeyDeVries/LearnOpenGL](https://github.com/JoeyDeVries/LearnOpenGL/tree/master/resources/textures/skybox)，每张文件的 blob SHA 在[程序资源记录](../../../assets/chapter04_resources.md)固定记录。小行星 OBJ 是本仓库自制教学模型，不是上游背包/行星资源。
 
 构建与截图参数见[构建指南](../../build.md#高级-opengl-示例)，逐节去向见[覆盖清单](../../04_advanced_opengl/coverage.md)。
+
+2026-10-22 复核修正增加 [共面冲突](01/depth_conflict.png) 与 [分离几何对照](01/depth_separated.png) 截图，分别来自 `01_depth_testing --frames 3 --mode 4/5`，同样在 MinGW GCC Debug / GTX 1660 上保存末帧并无损转换。更新后共 48 个模式接受有限帧检查。

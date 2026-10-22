@@ -227,6 +227,8 @@ void main() {
 
 源码：[`main.cpp`](../../apps/04_advanced_opengl/11_anti_aliasing/main.cpp)，目标：`04_advanced_opengl__11_anti_aliasing`。正文标为源码的 C++/GLSL 均直接摘取此文件；标为概念说明的独立片段用于说明规范或未启用的更高版本功能。
 
+初始化时按各 program 查询并缓存必需 uniform，任一位置为 -1 就报告失败并返回非零；渲染循环只使用已经检查的位置。位置属于具体 program，不能跨程序复用；也不能仅等待帧末 OpenGL 错误检查，因为 `glUniform*` 对位置 -1 会静默忽略更新。
+
 ```powershell
 cmake --preset mingw-gcc-debug
 cmake --build --preset mingw-gcc-debug --target 04_advanced_opengl__11_anti_aliasing

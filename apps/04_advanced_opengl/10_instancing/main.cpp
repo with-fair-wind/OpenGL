@@ -481,8 +481,20 @@ int run(GLFWwindow* window, const run_options& options) {
     if (asteroid_program == 0U || rocks.empty() || planet.empty()) {
         return EXIT_FAILURE;
     }
+    const GLint offsets_uniform{uniform_location(program, "offsets[0]")};
+    const GLint uniform_offsets{uniform_location(program, "uniform_offsets")};
+    const GLint scale_instances{uniform_location(program, "scale_instances")};
+    const GLint view_uniform{uniform_location(asteroid_program, "view")};
+    const GLint projection_uniform{uniform_location(asteroid_program, "projection")};
+    const GLint model_uniform{uniform_location(asteroid_program, "model")};
+    const GLint instanced_uniform{uniform_location(asteroid_program, "use_instances")};
+    if (offsets_uniform < 0 || uniform_offsets < 0 || scale_instances < 0 || view_uniform < 0 ||
+        projection_uniform < 0 || model_uniform < 0 || instanced_uniform < 0) {
+        return EXIT_FAILURE;
+    }
     constexpr std::size_t amount{1000U};
-    std::array<glm::mat4, amount> matrices{};
+    // 实例数量可提高到十万；矩阵存储放在堆上，避免耗尽 Windows 线程栈。
+    std::vector<glm::mat4> matrices(amount, glm::mat4{1.0F});
     std::mt19937 generator{42U};
     std::uniform_real_distribution<float> displacement{-1.6F, 1.6F};
     std::uniform_real_distribution<float> scale_range{0.08F, 0.3F};
@@ -502,7 +514,8 @@ int run(GLFWwindow* window, const run_options& options) {
     glGenBuffers(1, &matrix_buffer);
     resources.buffers.push_back(matrix_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, matrix_buffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(matrices), matrices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(matrices.size() * sizeof(glm::mat4)),
+                 matrices.data(), GL_STATIC_DRAW);
     static_assert(sizeof(glm::mat4) == 4U * sizeof(glm::vec4));
     for (const render_mesh& mesh : rocks) {
         glBindVertexArray(mesh.vao);
@@ -518,7 +531,7 @@ int run(GLFWwindow* window, const run_options& options) {
     // OpenGL: 后续 uniform 更新和绘制使用此程序。
     glUseProgram(program);
     // OpenGL: 将连续 vec2 数组上传到 uniform 数组。
-    glUniform2fv(uniform_location(program, "offsets[0]"), 100, glm::value_ptr(offsets[0]));
+    glUniform2fv(offsets_uniform, 100, glm::value_ptr(offsets[0]));
     int mode{options.initial_mode};
     bool previous_space{false};
     camera_position = {0.0F, 9.0F, 26.0F};
@@ -560,11 +573,9 @@ int run(GLFWwindow* window, const run_options& options) {
             glUseProgram(program);
             glBindVertexArray(vao);
             // OpenGL: 写入标量整型或布尔 uniform；sampler 接收纹理单元索引。
-            glUniform1i(uniform_location(program, "uniform_offsets"),
-                        mode == 1 ? GL_TRUE : GL_FALSE);
+            glUniform1i(uniform_offsets, mode == 1 ? GL_TRUE : GL_FALSE);
             // OpenGL: 一次提交多个实例；顶点和实例属性按照各自除数读取。
-            glUniform1i(uniform_location(program, "scale_instances"),
-                        mode == 4 ? GL_TRUE : GL_FALSE);
+            glUniform1i(scale_instances, mode == 4 ? GL_TRUE : GL_FALSE);
             glDrawArraysInstanced(GL_TRIANGLES, 0, 6, static_cast<GLsizei>(offsets.size()));
         } else {
             // OpenGL: 启用当前示例所需的固定功能状态。
@@ -576,12 +587,8 @@ int run(GLFWwindow* window, const run_options& options) {
                 glm::radians(field_of_view), static_cast<float>(width) / static_cast<float>(height),
                 0.1F, 100.0F)};
             // OpenGL: GLM 按列存储矩阵，GL_FALSE 表示不转置。
-            glUniformMatrix4fv(uniform_location(asteroid_program, "view"), 1, GL_FALSE,
-                               glm::value_ptr(view));
-            glUniformMatrix4fv(uniform_location(asteroid_program, "projection"), 1, GL_FALSE,
-                               glm::value_ptr(projection));
-            const GLint model_uniform{uniform_location(asteroid_program, "model")};
-            const GLint instanced_uniform{uniform_location(asteroid_program, "use_instances")};
+            glUniformMatrix4fv(view_uniform, 1, GL_FALSE, glm::value_ptr(view));
+            glUniformMatrix4fv(projection_uniform, 1, GL_FALSE, glm::value_ptr(projection));
             const glm::mat4 planet_model{glm::scale(glm::mat4{1.0F}, glm::vec3{2.5F})};
             glUniform1i(instanced_uniform, GL_FALSE);
             glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(planet_model));

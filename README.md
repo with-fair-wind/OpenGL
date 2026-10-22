@@ -17,7 +17,7 @@
 | 01 入门 | [10 篇教程](docs/01_getting_started/README.md) | 7 个主示例 + 3 个着色器练习 |
 | 02 光照 | [6 篇教程](docs/02_lighting/README.md) | 6 个主示例 |
 | 03 模型加载 | [3 篇教程](docs/03_model_loading/README.md) | 3 个主示例 |
-| 04 高级 OpenGL | [11 篇教程与覆盖清单](docs/04_advanced_opengl/README.md) | 11 个主示例，46 个模式 |
+| 04 高级 OpenGL | [11 篇教程与覆盖清单](docs/04_advanced_opengl/README.md) | 11 个主示例，48 个模式 |
 
 合计 30 篇教程、27 个主示例和 3 个练习目标。教程使用 GitHub Markdown，图片存放在 `docs/img/`；实际示例代码片段对应 `apps/` 源码，概念示例另行标明。下一阶段为 05 Advanced Lighting，目前尚未创建对应教程和示例。
 
