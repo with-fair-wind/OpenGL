@@ -4,8 +4,10 @@
 | --- | --- |
 | 原文 | [Assimp](http://learnopengl.com/#!Model-Loading/Assimp) |
 | 作者 | JoeyDeVries |
-| 来源 | LearnOpenGL-CN（本文基于其内容整理修订） |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/03%20Model%20Loading/01%20Assimp.md) |
 | 本仓库示例 | [`apps/03_model_loading/01_assimp/`](../../apps/03_model_loading/01_assimp/) |
+| 翻译 | Cocoonshu, Krasjet, [Geequlim](http://geequlim.com) |
+| 校对 | 暂未校对 |
 
 到目前为止的所有场景中，我们一直都在滥用我们的箱子朋友，但时间久了即使是最好的朋友也会感到无聊。在日常的图形程序中，通常都会使用非常复杂且好玩的模型，它们比静态的箱子要好看多了。然而，和箱子对象不同，我们不太能够对像是房子、汽车或者人形角色这样的复杂形状手工定义所有的顶点、法线和纹理坐标。我们想要的是将这些模型（Model）**导入**（Import）到程序当中。模型通常都由 3D 艺术家在 [Blender](http://www.blender.org/)、[3DS Max](http://www.autodesk.nl/products/3ds-max/overview) 或者 [Maya](http://www.autodesk.com/products/autodesk-maya/overview) 这样的工具中精心制作。
 
@@ -91,7 +93,7 @@ flowchart TB
 
 | 标志 | 作用 |
 | --- | --- |
-| `aiProcess_Triangulate` | 把多边形面全部拆成三角形——OpenGL 经典绘制只吃三角形 |
+| `aiProcess_Triangulate` | 将多边形面拆成三角形，匹配本例的 `GL_TRIANGLES` 绘制；点和线不会因此变成三角形。OpenGL 本身也支持点和线图元。 |
 | `aiProcess_GenSmoothNormals` | 为缺法线的 mesh 生成平滑法线；已有法线则保持原样 |
 | `aiProcess_JoinIdenticalVertices` | 合并位置/属性完全相同的重复顶点，省显存 |
 | `aiProcess_OptimizeMeshes` | 把过碎的小 mesh 合并，减少绘制调用次数 |

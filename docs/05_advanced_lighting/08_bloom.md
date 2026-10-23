@@ -6,9 +6,8 @@
 | 作者 | Joey de Vries |
 | 翻译 | [Django](http://bullteacher.com/) |
 | 校对 | gjy_1992, [AoZhang](https://github.com/SuperAoao) |
-| 中文底本 | [LearnOpenGL-CN 固定版本](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/05%20Advanced%20Lighting/07%20Bloom.md)，`new-theme` / `331560886468e28f28326429334fc48470f9c27b` |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/05%20Advanced%20Lighting/07%20Bloom.md) |
 | 本仓库示例 | [main.cpp](../../apps/05_advanced_lighting/08_bloom/main.cpp) |
-| 修订与范围 | [逐项覆盖与验证记录](coverage.md)；纯 GFM，代码片段逐字取自对应源码 |
 
 **泛光提取亮部、扩散其图像贡献，再在线性 HDR 场景上相加；最后才做色调映射与显示编码。** 普通输出范围下，太阳和白纸都可能映射成白色，光晕能额外提供“极亮”的视觉线索，但它并不让实际显示设备超出自身能力。
 

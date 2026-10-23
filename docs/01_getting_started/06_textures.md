@@ -4,8 +4,10 @@
 | --- | --- |
 | 原文 | [Textures](http://learnopengl.com/#!Getting-started/Textures) |
 | 作者 | JoeyDeVries |
-| 来源 | LearnOpenGL-CN（本文基于其内容整理修订） |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/01%20Getting%20started/06%20Textures.md) |
 | 本仓库示例 | `apps/01_getting_started/04_textures/` |
+| 翻译 | [Django](http://bullteacher.com/), Krasjet, Geequlim, [BLumia](https://github.com/blumia/) |
+| 校对 | AoZhang |
 
 > **注意：**
 >

@@ -4,8 +4,10 @@
 | --- | --- |
 | 原文 | [Hello Triangle](http://learnopengl.com/#!Getting-started/Hello-Triangle) |
 | 作者 | JoeyDeVries |
-| 来源 | LearnOpenGL-CN（本文基于其内容整理修订） |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/01%20Getting%20started/04%20Hello%20Triangle.md) |
 | 本仓库示例 | `apps/01_getting_started/02_hello_triangle/` |
+| 翻译 | [Django](http://bullteacher.com/), Krasjet, Geequlim |
+| 校对 | Kang Lin <kl222@126.com>, [AoZhang](https://github.com/SuperAoao) |
 
 > **译注：**
 >
@@ -449,6 +451,8 @@ while (glfwWindowShouldClose(window) == GLFW_FALSE) {
 
 ## 元素缓冲对象
 
+本小节的索引矩形代码摘自 [纹理示例 main.cpp](../../apps/01_getting_started/04_textures/main.cpp)；三角形示例本身仍使用 `glDrawArrays`。
+
 **一句话核心：** 绘制矩形等形状时，相邻三角形会共享顶点；元素缓冲对象（EBO）让我们只储存一次顶点、用索引数组描述绘制顺序，避免重复顶点带来的浪费。
 
 在渲染顶点这一话题上我们还有最后一个需要讨论的东西——元素缓冲对象（Element Buffer Object，EBO），也叫索引缓冲对象（Index Buffer Object，IBO）。解释元素缓冲对象的工作方式最好举个例子：假设我们不再绘制一个三角形而是绘制一个矩形。我们可以绘制两个三角形来组成一个矩形（OpenGL 主要处理三角形）。如果不用索引，需要指定 6 个顶点，其中「右下角」和「左上角」会被重复指定两次！一个矩形只有 4 个而不是 6 个顶点，这样就产生 50% 的额外开销。当模型包含上千个三角形时，这个问题会更糟糕。
@@ -498,6 +502,10 @@ glDrawElements(
 > - `glDrawElements` 额外读取索引缓冲（EBO）：顶点只存一份，绘制顺序由索引决定，共用顶点零重复。
 > - 性能上两者都很快，但索引绘制能让 GPU 的顶点缓存复用已处理过的顶点，实际项目中复杂网格几乎都用 `glDrawElements`。
 > - 本仓库三角形用 `glDrawArrays(GL_TRIANGLES, 0, 3)`，矩形（`04_textures` 示例）改用 `glDrawElements`——4 个顶点被 6 个索引复用，正好对应本节的 EBO 讲解。
+
+下图展示 VAO 同时保存顶点属性关联与 EBO 绑定；它们一起决定索引绘制时如何取数：
+
+![](../img/01/04/vertex_array_objects_ebo.png)
 
 运行上面的索引绘制程序，会得到下面的图片：左侧是普通的填充模式，右侧是使用**线框模式**（Wireframe Mode）绘制的，可以清楚看到矩形确实由两个三角形组成：
 

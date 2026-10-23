@@ -2,7 +2,7 @@
 
 本目录是 OpenGL Lab 仓库的 Getting Started 章节中文教程，共 10 篇，对应 [LearnOpenGL](http://learnopengl.com) 的 Getting Started 部分。
 
-内容基于 [LearnOpenGL-CN](https://github.com/with-fair-wind/LearnOpenGL-CN) 翻译整理，并做了两方面工作：
+教程参考 [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN) 与 [LearnOpenGL 英文原文](https://learnopengl.com/)，技术解释结合规范和本仓库实现修订。内容对应与待补齐项见 [覆盖清单](coverage.md)。
 
 - **修正**：修正译文中术语不准确（如"连接器"→"链接器"、"返回键"→"退出键"）、病句、笔误等表述问题，统一专业术语。
 - **完善**：从局部到整体的视角补充讲解——每个关键概念先给"一句话核心"，再明确职责边界（OpenGL 规范 / GLFW / 显卡驱动 / 应用程序各自负责什么），配全景链路图说明概念在整个渲染管线中的位置，并用本仓库实际代码逐段讲解。

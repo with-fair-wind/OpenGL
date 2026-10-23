@@ -1,6 +1,6 @@
 # 高级光照教程（05 章）
 
-本章承接[高级 OpenGL](../04_advanced_opengl/README.md)，按 LearnOpenGL-CN 官方上游固定提交 `331560886468e28f28326429334fc48470f9c27b` 的 10 篇文章编写。标题、推导、案例、提示、图片与阅读资源对应见[覆盖清单](coverage.md)，技术表述结合英文与 OpenGL/GLSL 规范修订。
+本章承接[高级 OpenGL](../04_advanced_opengl/README.md)，学习 Blinn-Phong、Gamma、阴影、法线与视差贴图、HDR、泛光、延迟着色和 SSAO。教程参考 [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN) 与英文原文修订，内容对应与验证记录见 [覆盖清单](coverage.md)。
 
 | 篇 | 教程 | 示例模式 |
 | --- | --- | --- |

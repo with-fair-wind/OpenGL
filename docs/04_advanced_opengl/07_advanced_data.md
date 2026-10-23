@@ -6,9 +6,8 @@
 | 作者 | Joey de Vries |
 | 翻译 | Krasjet |
 | 校对 | 暂未校对 |
-| 中文底本 | [LearnOpenGL-CN 上游固定版本](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/04%20Advanced%20OpenGL/07%20Advanced%20Data.md)，`new-theme` / `331560886468e28f28326429334fc48470f9c27b` |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/04%20Advanced%20OpenGL/07%20Advanced%20Data.md) |
 | 本仓库示例 | [`apps/04_advanced_opengl/07_advanced_data/main.cpp`](../../apps/04_advanced_opengl/07_advanced_data/main.cpp) |
-| 修订 | 按上游完整小节顺序重写，技术差异见正文；[逐项覆盖清单](coverage.md) |
 
 **缓冲对象管理一段字节存储，绑定目标决定这次怎样使用它；目标不是对象不可改变的永久类型。** 同一个缓冲可以在不同操作中绑定为顶点数据、复制源或复制目标。驱动决定存储和同步实现，OpenGL 规定可访问范围；应用负责偏移、布局和生命周期，GLFW 不管理这些数据。
 

@@ -4,8 +4,10 @@
 | --- | --- |
 | 原文 | [Lighting Maps](http://learnopengl.com/#!Lighting/Lighting-maps) |
 | 作者 | JoeyDeVries |
-| 来源 | LearnOpenGL-CN（本文基于其内容整理修订） |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/02%20Lighting/04%20Lighting%20maps.md) |
 | 本仓库示例 | [`apps/02_lighting/04_lighting_maps/`](../../apps/02_lighting/04_lighting_maps/) |
+| 翻译 | Krasjet |
+| 校对 | [AoZhang](https://github.com/SuperAoao) |
 
 在上一节中，我们讨论了让每个物体都拥有自己独特的材质从而对光照做出不同的反应的方法。这样能够很容易在一个光照的场景中给每个物体一个独特的外观，但这仍不能对一个物体的视觉输出提供足够多的灵活性。
 

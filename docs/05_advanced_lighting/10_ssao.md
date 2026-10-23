@@ -6,9 +6,8 @@
 | 作者 | Joey de Vries |
 | 翻译 | Krasjet |
 | 校对 | 未校对 |
-| 中文底本 | [LearnOpenGL-CN 固定版本](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/05%20Advanced%20Lighting/09%20SSAO.md)，`new-theme` / `331560886468e28f28326429334fc48470f9c27b` |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/05%20Advanced%20Lighting/09%20SSAO.md) |
 | 本仓库示例 | [main.cpp](../../apps/05_advanced_lighting/10_ssao/main.cpp) |
-| 修订与范围 | [逐项覆盖与验证记录](coverage.md)；纯 GFM，代码片段逐字取自对应源码 |
 
 **SSAO 用当前屏幕可见表面的邻域深度近似环境遮蔽，再只衰减环境光项。** 常量环境光会把墙角、缝隙和接触面一视同仁；AO 则尝试描述周围几何限制入射间接光的程度。它不是所有间接光的物理求解，也不能保证任何墙角在任意照明下都更暗。
 

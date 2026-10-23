@@ -1,6 +1,6 @@
 # 第 06 章：PBR
 
-本章接续高级光照，按理论 → 直接光照 → 漫反射 IBL → 镜面 IBL 学习。中文底本来自 [LearnOpenGL-CN/LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN) 的 new-theme 固定提交 `331560886468e28f28326429334fc48470f9c27b`，对应上游 `docs/07 PBR/`。本地编号采用英文主线的学习顺序；上游的 4 篇文章、38 项各级标题均保留对应关系，见[覆盖清单](coverage.md)。
+本章接续高级光照，按理论 → 直接光照 → 漫反射 IBL → 镜面 IBL 学习。教程参考 [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN) 与英文原文修订。本地沿用英文主线顺序编号为 06，对应中文底本的第 07 章；内容对应与修订记录见 [覆盖清单](coverage.md)。
 
 | 篇目 | 核心内容 | 实际目标/模式 |
 | --- | --- | --- |

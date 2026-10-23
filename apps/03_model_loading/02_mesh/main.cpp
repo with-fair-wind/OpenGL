@@ -4,7 +4,7 @@
  *
  * @details
  * 前两章每个示例都手写 VAO/VBO/EBO 和 attribute 指针，代码随示例复杂度反复膨胀。
- * Mesh 把"一份几何 + 一张贴图集"的 GPU 状态封装成一个结构体：
+ * Mesh 把"一份几何 + 一组材质贴图"的 GPU 状态封装成一个结构体：
  * 构造时一次性上传顶点/索引并记录 attribute 布局，绘制时只需要绑定 VAO、
  * 绑定纹理、按索引数发出一次 glDrawElements。
  * 本示例用 Mesh 绘制一个带漫反射/镜面贴图的立方体和一个光源小立方体，
@@ -12,12 +12,14 @@
  */
 
 #include <array>
+#include <cstddef>
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
 #include <memory>
 #include <numeric>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include <glad/glad.h>
@@ -334,12 +336,12 @@ Mesh make_mesh(const std::vector<Vertex>& vertices, const std::vector<GLuint>& i
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, static_cast<GLsizeiptr>(indices.size() * sizeof(GLuint)),
                  indices.data(), GL_STATIC_DRAW);
 
-    // OpenGL: attribute 偏移按交错布局计算——位置在结构体开头（偏移 0），
-    // 法线偏移 3 个 float，纹理坐标偏移 6 个 float；static_assert 保证布局紧密。
+    // OpenGL: 标准布局允许用 offsetof 查询成员偏移；步长保留结构体实际大小，包含填充。
+    static_assert(std::is_standard_layout_v<Vertex>, "Vertex must have standard layout");
+    static_assert(std::is_trivially_copyable_v<Vertex>, "Vertex must be trivially copyable");
     constexpr GLsizei vertex_stride{static_cast<GLsizei>(sizeof(Vertex))};
-    constexpr auto normal_offset{3 * sizeof(float)};
-    constexpr auto tex_coord_offset{6 * sizeof(float)};
-    static_assert(sizeof(Vertex) == 8 * sizeof(float), "Vertex must stay tightly packed");
+    constexpr auto normal_offset{offsetof(Vertex, normal)};
+    constexpr auto tex_coord_offset{offsetof(Vertex, tex_coords)};
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vertex_stride, nullptr);
     glEnableVertexAttribArray(0);

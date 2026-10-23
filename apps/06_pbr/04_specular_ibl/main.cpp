@@ -227,7 +227,7 @@ bool finish_frame(GLFWwindow* window, const run_options& options, int frame, int
         // GLFW: 标记结束渲染循环，资源在循环退出后释放。
         glfwSetWindowShouldClose(window, GLFW_TRUE);
     }
-    return success;
+    return success && !api_error;
 }
 
 // Camera: 复用入门章的键鼠相机；每个示例保留自己的状态与回调。
@@ -1543,7 +1543,12 @@ int main(int argc, char** argv) {
     // OpenGL: 读取当前驱动标识用于冒烟日志。
     std::cout << "Renderer: " << glGetString(GL_RENDERER) << '\n';
     const int result{run(window, options)};
+    // OpenGL: 非调试生成器也检查资源销毁或末次事件回调留下的错误。
+    for (GLenum error{glGetError()}; error != GL_NO_ERROR; error = glGetError()) {
+        std::cerr << "OpenGL error: " << error << '\n';
+        api_error = true;
+    }
     glfwDestroyWindow(window);
     glfwTerminate();
-    return result;
+    return result == EXIT_SUCCESS && !api_error ? EXIT_SUCCESS : EXIT_FAILURE;
 }

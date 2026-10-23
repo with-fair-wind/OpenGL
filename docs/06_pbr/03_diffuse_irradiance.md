@@ -6,7 +6,7 @@
 | 作者 | Joey de Vries |
 | 翻译 | [flyingSnow](https://github.com/flyingSnow-hu) |
 | 校对 | 上游未署名 |
-| 来源 | [LearnOpenGL-CN 固定底本](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/07%20PBR/03%20IBL/01%20Diffuse%20irradiance.md)；本仓库整理、纠错与代码适配 |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/07%20PBR/03%20IBL/01%20Diffuse%20irradiance.md) |
 | 本仓库示例 | [`06_pbr__03_diffuse_irradiance`](../../apps/06_pbr/03_diffuse_irradiance/main.cpp) |
 
 **漫反射 IBL 把环境的余弦加权半球积分预先存到立方体贴图，运行时按表面法线采样。** 应用负责 HDR 解码、六个观察矩阵和积分权重；OpenGL 规范定义浮点纹理、FBO 和采样，驱动执行卷积。GLFW 的窗口尺寸与离屏捕获尺寸分开管理，每个阶段都重新设置视口。

@@ -4,8 +4,12 @@
 | --- | --- |
 | 原文 | [Light casters](http://learnopengl.com/#!Lighting/Light-casters) |
 | 作者 | JoeyDeVries |
-| 来源 | LearnOpenGL-CN（本文基于其内容整理修订） |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/02%20Lighting/05%20Light%20casters.md) |
 | 本仓库示例 | [`apps/02_lighting/05_light_casters/`](../../apps/02_lighting/05_light_casters/) |
+| 翻译 | Krasjet |
+| 校对 | [AoZhang](https://github.com/SuperAoao) |
+
+代码来源：点光源段落使用 [本节 main.cpp](../../apps/02_lighting/05_light_casters/main.cpp)，定向光与聚光灯段落使用 [多光源 main.cpp](../../apps/02_lighting/06_multiple_lights/main.cpp)。各段的结构体与 uniform 名称以对应程序为准。
 
 我们目前使用的光照都来自于空间中的一个点。它能给我们不错的效果，但现实世界中，我们有很多种类的光照，每种的表现都不同。将光**投射**（Cast）到物体的光源叫做**投光物**（Light Caster）。在这一节中，我们将会讨论几种不同类型的投光物。学会模拟不同种类的光源是又一个能够进一步丰富场景的工具。
 

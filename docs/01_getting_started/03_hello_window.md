@@ -4,8 +4,10 @@
 | --- | --- |
 | 原文 | [Hello Window](http://learnopengl.com/#!Getting-started/Hello-Window) |
 | 作者 | JoeyDeVries |
-| 来源 | LearnOpenGL-CN（本文基于其内容整理修订） |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/01%20Getting%20started/03%20Hello%20Window.md) |
 | 本仓库示例 | `apps/01_getting_started/01_hello_window/` |
+| 翻译 | Geequlim, Krasjet |
+| 校对 | 暂未校对 |
 
 上一节我们把环境准备好之后，这一节要第一次真正写出一个完整的 OpenGL 程序：初始化 GLFW，创建窗口和 OpenGL 上下文，用 GLAD 加载函数，然后跑起渲染循环。本仓库的示例程序位于 `apps/01_getting_started/01_hello_window/main.cpp`，下面我们逐段讲解它的实际代码。
 
@@ -199,7 +201,7 @@ void framebuffer_size_callback(GLFWwindow*, int width, int height) {
 }
 ```
 
-这个回调函数需要一个 `GLFWwindow` 作为它的第一个参数（本仓库示例没用到，所以省略了参数名），以及两个整数表示窗口的新维度。每当窗口改变大小，GLFW 会调用这个函数并填充相应的参数供你处理。当窗口被第一次显示的时候 `framebuffer_size_callback` 也会被调用。对于视网膜（Retina）显示屏，`width` 和 `height` 都会明显比原输入值更高一点——因为帧缓冲尺寸和窗口尺寸是两回事。
+这个回调函数需要一个 `GLFWwindow` 作为它的第一个参数（本仓库示例没用到，所以省略了参数名），以及两个整数表示窗口的新维度。每当窗口改变大小，GLFW 会调用这个函数并填充相应的参数供你处理。不要依赖首次显示窗口时一定触发尺寸回调；本例在渲染循环前显式查询帧缓冲尺寸并初始化视口。对于视网膜（Retina）显示屏，`width` 和 `height` 都会明显比原输入值更高一点——因为帧缓冲尺寸和窗口尺寸是两回事。
 
 > **常见误解：** 有人以为 `glViewport` 是"设置窗口大小"，或者"设置 OpenGL 画布大小"。准确地说：窗口大小由 GLFW/操作系统决定；帧缓冲尺寸由窗口系统报告（可能不等于窗口尺寸，尤其在高 DPI 屏幕上）；`glViewport` 决定的是"渲染结果映射到帧缓冲的哪块矩形"。三者是不同层面的东西。
 

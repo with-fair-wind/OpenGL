@@ -6,9 +6,8 @@
 | 作者 | Joey de Vries |
 | 翻译 | [Django](http://bullteacher.com/) |
 | 校对 | 暂无 |
-| 中文底本 | [LearnOpenGL-CN 固定版本](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/05%20Advanced%20Lighting/05%20Parallax%20Mapping.md)，`new-theme` / `331560886468e28f28326429334fc48470f9c27b` |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/05%20Advanced%20Lighting/05%20Parallax%20Mapping.md) |
 | 本仓库示例 | [main.cpp](../../apps/05_advanced_lighting/06_parallax_mapping/main.cpp) |
-| 修订与范围 | [逐项覆盖与验证记录](coverage.md)；纯 GFM，代码片段逐字取自对应源码 |
 
 **视差贴图沿观察方向修改纹理坐标，以较少几何模拟表面深度；它本身不移动顶点。** 法线贴图改变反射方向，视差贴图改变“应看见纹理的哪个位置”，两者结合才让外观深度和光照细节相互配合。它不是一种光照方程，因此仍可和不同的直接光照模型组合。
 

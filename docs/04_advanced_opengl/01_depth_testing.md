@@ -6,9 +6,8 @@
 | 作者 | Joey de Vries |
 | 翻译 | Krasjet |
 | 校对 | 暂未校对 |
-| 中文底本 | [LearnOpenGL-CN 上游固定版本](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/04%20Advanced%20OpenGL/01%20Depth%20testing.md)，`new-theme` / `331560886468e28f28326429334fc48470f9c27b` |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/04%20Advanced%20OpenGL/01%20Depth%20testing.md) |
 | 本仓库示例 | [`apps/04_advanced_opengl/01_depth_testing/main.cpp`](../../apps/04_advanced_opengl/01_depth_testing/main.cpp) |
-| 修订 | 按上游完整小节顺序重写，技术差异见正文；[逐项覆盖清单](coverage.md) |
 
 **深度测试用当前片段的深度与附件中保存的深度比较，从而决定可见性；它不按物体中心的距离排序。** 前面的相机示例已经启用深度测试，这里把比较规则、精度和可视化拆开说明。深度是窗口空间值，默认范围为 $[0,1]$，通常近处小、远处大。
 

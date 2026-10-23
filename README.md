@@ -1,6 +1,6 @@
 # OpenGL Lab
 
-这是一个面向 OpenGL 新手的现代 C++ 学习仓库，目标平台为 Windows。代码路线主要参考 [LearnOpenGL](https://learnopengl.com/)，中文教程基于 [LearnOpenGL-CN 官方上游](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN) 整理修订，并结合规范修正技术表述。当前已有入门、光照、模型加载、高级 OpenGL、高级光照和 PBR 六个章节的代码与教程；第 04、05、06 章的逐节对应范围和验证结果分别见[高级 OpenGL](docs/04_advanced_opengl/coverage.md)、[高级光照](docs/05_advanced_lighting/coverage.md)与 [PBR 覆盖清单](docs/06_pbr/coverage.md)，前 01–03 章需另按加强后的完整性规范核验。
+这是一个面向 OpenGL 新手的现代 C++ 学习仓库，目标平台为 Windows。代码路线主要参考 [LearnOpenGL](https://learnopengl.com/)，中文教程基于 [LearnOpenGL-CN 官方上游](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN) 整理修订，并结合规范修正技术表述。当前已有入门、光照、模型加载、高级 OpenGL、高级光照和 PBR 六个章节的代码与教程。各章内容对应、修订记录与尚待补齐的部分见相应目录的 `coverage.md`。
 
 ## 当前目标
 
@@ -15,13 +15,13 @@
 | 章节 | 中文教程 | 可执行示例 |
 | --- | --- | --- |
 | 01 入门 | [10 篇教程](docs/01_getting_started/README.md) | 7 个主示例 + 3 个着色器练习 |
-| 02 光照 | [6 篇教程](docs/02_lighting/README.md) | 6 个主示例 |
+| 02 光照 | [7 篇教程](docs/02_lighting/README.md) | 6 个主示例 |
 | 03 模型加载 | [3 篇教程](docs/03_model_loading/README.md) | 3 个主示例 |
 | 04 高级 OpenGL | [11 篇教程与覆盖清单](docs/04_advanced_opengl/README.md) | 11 个主示例，48 个模式 |
 | 05 高级光照 | [10 篇教程与覆盖清单](docs/05_advanced_lighting/README.md) | 10 个主示例，63 个模式 |
 | 06 PBR | [4 篇教程与覆盖清单](docs/06_pbr/README.md) | 3 个主示例，23 个模式；理论篇无独立目标 |
 
-合计 44 篇教程、40 个主示例和 3 个练习目标。教程使用 GitHub Markdown，图片存放在 `docs/img/`；实际示例代码片段对应 `apps/` 源码，概念示例另行标明。PBR 之后接续实践专题，尚未创建对应教程和示例。
+合计 45 篇教程、40 个主示例和 3 个练习目标。教程使用 GitHub Markdown，图片存放在 `docs/img/`；实际示例代码片段对应 `apps/` 源码，概念示例另行标明。PBR 之后接续实践专题，尚未创建对应教程和示例。
 
 ## 依赖
 

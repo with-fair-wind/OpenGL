@@ -4,8 +4,10 @@
 | --- | --- |
 | 原文 | [Materials](http://learnopengl.com/#!Lighting/Materials) |
 | 作者 | JoeyDeVries |
-| 来源 | LearnOpenGL-CN（本文基于其内容整理修订） |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/02%20Lighting/03%20Materials.md) |
 | 本仓库示例 | [`apps/02_lighting/03_materials/`](../../apps/02_lighting/03_materials/) |
+| 翻译 | Krasjet |
+| 校对 | [AoZhang](https://github.com/SuperAoao) |
 
 在现实世界里，每个物体会对光产生不同的反应。比如，钢制物体看起来通常会比陶土花瓶更闪闪发光，一个木头箱子也不会与一个钢制箱子反射同样程度的光。有些物体反射光的时候不会有太多的**散射**（Scatter），因而产生较小的高光点，而有些物体则会散射很多，产生一个有着更大半径的高光点。如果我们想要在 OpenGL 中模拟多种类型的物体，我们必须针对每种表面定义不同的**材质**（Material）属性。
 

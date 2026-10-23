@@ -4,7 +4,9 @@
 | --- | --- |
 | 原文 | [Review](https://learnopengl.com/#!Getting-started/Review) |
 | 作者 | JoeyDeVries |
-| 来源 | LearnOpenGL-CN（本文基于其内容整理修订） |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/01%20Getting%20started/10%20Review.md) |
+| 翻译 | Krasjet |
+| 校对 | Geequlim，[orbitgw](https://github.com/orbitgw/) |
 
 恭喜你完成了 Getting Started 章节的学习。至此你应该已经能够：创建窗口与 OpenGL 上下文，编写并编译着色器，通过缓冲对象或 uniform 发送数据，绘制物体，使用纹理，理解向量与矩阵，并综合以上知识创建可自由漫游的 3D 场景。
 
@@ -67,6 +69,8 @@ OpenGL 没有摄像机，摄像机只是三个向量加一个 `lookAt` 函数。
 
 无论哪一节，程序骨架都是同一个渲染循环。用本仓库的现代 C++23 风格写出来是这样（省略资源创建细节）：
 
+独立概念示例（不是 `apps/` 源码摘录；需结合本节说明的上下文使用）：
+
 ```c++
 while (glfwWindowShouldClose(window) == GLFW_FALSE) {
     process_input(window);
@@ -94,11 +98,11 @@ while (glfwWindowShouldClose(window) == GLFW_FALSE) {
 - **视口（Viewport）**：我们需要渲染的窗口区域。
 - **图形管线（Graphics Pipeline）**：一个顶点在被渲染为像素之前经过的全部过程。
 - **着色器（Shader）**：运行在显卡上的小型程序。图形管线的很多阶段都可以使用自定义着色器代替原有功能。
-- **标准化设备坐标（Normalized Device Coordinates, NDC）**：顶点经裁剪与透视除法后所在的坐标系。NDC 下所有位置在 -1.0 ~ 1.0 的顶点可见，其余被丢弃。
-- **顶点缓冲对象（Vertex Buffer Object）**：在显存上分配内存并存储所有顶点数据、供显卡使用的缓冲对象。
+- **标准化设备坐标（Normalized Device Coordinates, NDC）**：裁剪后对齐次坐标执行透视除法所得到的坐标。默认裁剪体对应各轴的 $[-1,1]$；裁剪以图元为单位，并非简单丢弃所有在范围外的原始顶点；落在范围内也不保证通过深度、模板等后续测试。
+- **顶点缓冲对象（Vertex Buffer Object）**：保存顶点数据、供顶点属性取数使用的缓冲对象。具体存储位置由实现管理，不能保证总在独立显存中。
 - **顶点数组对象（Vertex Array Object）**：存储缓冲区与顶点属性布局状态。
 - **元素缓冲对象（Element Buffer Object，EBO）/ 索引缓冲对象（Index Buffer Object，IBO）**：存储元素索引、供索引化绘制使用的缓冲对象。
-- **Uniform**：一种特殊类型的 GLSL 变量。它在一个着色器程序中是全局的（每个着色器阶段都能访问），并且只需被设置一次。
+- **Uniform**：由应用设置、在一次绘制调用期间不随顶点或片段变化的 GLSL 变量。变量在使用它的阶段声明，同一程序各阶段的匹配声明共享值；成功链接后初始化，随后保留到应用修改或程序重新链接，不是永远只设置一次。
 - **纹理（Texture）**：包裹物体的特殊类型图像，为物体提供精细的视觉效果。
 - **纹理环绕（Texture Wrapping）**：当纹理坐标超出 (0, 1) 范围时，指定 OpenGL 如何采样纹理的模式。
 - **纹理过滤（Texture Filtering）**：当有多种纹素可选时，指定 OpenGL 如何采样纹理的模式（通常在纹理被放大时发生）。

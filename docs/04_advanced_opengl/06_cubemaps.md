@@ -6,9 +6,8 @@
 | 作者 | Joey de Vries |
 | 翻译 | Krasjet |
 | 校对 | 暂未校对 |
-| 中文底本 | [LearnOpenGL-CN 上游固定版本](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/04%20Advanced%20OpenGL/06%20Cubemaps.md)，`new-theme` / `331560886468e28f28326429334fc48470f9c27b` |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/04%20Advanced%20OpenGL/06%20Cubemaps.md) |
 | 本仓库示例 | [`apps/04_advanced_opengl/06_cubemaps/main.cpp`](../../apps/04_advanced_opengl/06_cubemaps/main.cpp) |
-| 修订 | 按上游完整小节顺序重写，技术差异见正文；[逐项覆盖清单](coverage.md) |
 
 **立方体贴图把六幅正方形图像组成按方向采样的环境；采样输入是方向，不是某一面的二维 UV。** 方向的主分量决定选择哪个面，再投影到该面。非零方向乘一个正比例因子不会改变采样位置，零向量不提供有效方向。
 

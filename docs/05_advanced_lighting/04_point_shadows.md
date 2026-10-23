@@ -6,9 +6,8 @@
 | 作者 | Joey de Vries |
 | 翻译 | [Django](http://bullteacher.com/) |
 | 校对 | 暂无 |
-| 中文底本 | [LearnOpenGL-CN 固定版本](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/05%20Advanced%20Lighting/03%20Shadows/02%20Point%20Shadows.md)，`new-theme` / `331560886468e28f28326429334fc48470f9c27b` |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/05%20Advanced%20Lighting/03%20Shadows/02%20Point%20Shadows.md) |
 | 本仓库示例 | [main.cpp](../../apps/05_advanced_lighting/04_point_shadows/main.cpp) |
-| 修订与范围 | [逐项覆盖与验证记录](coverage.md)；纯 GFM，代码片段逐字取自对应源码 |
 
 **点光源阴影用六张方向相邻的深度图覆盖光源周围，并用统一的光源距离比较遮挡。** 上一篇的一张投影图只覆盖一个视域，并非阴影映射技术只能处理平行光；把六个 90° 透视视域组织成立方体贴图，就能处理点光源。
 

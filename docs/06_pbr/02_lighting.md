@@ -6,7 +6,7 @@
 | 作者 | Joey de Vries |
 | 翻译 | [KenLee](https://hellokenlee.github.io/) |
 | 校对 | JeremyYvv |
-| 来源 | [LearnOpenGL-CN 固定底本](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/07%20PBR/02%20Lighting.md)；本仓库整理、纠错与代码适配 |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/07%20PBR/02%20Lighting.md) |
 | 本仓库示例 | [`06_pbr__02_lighting`](../../apps/06_pbr/02_lighting/main.cpp) |
 
 **直接 PBR 将每个已知解析光源的贡献，按同一 BRDF 与投影余弦求和。** 应用负责光强、距离、材质和单位，GLFW 创建上下文，OpenGL/驱动按程序与纹理状态执行。设置 uniform 与随后绘制的每一个球是两个阶段；本例先上传四灯参数再绘制物体，避免首帧使用未设置的光源。

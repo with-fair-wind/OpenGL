@@ -2,7 +2,7 @@
 
 ## 项目概述
 
-OpenGL Lab 是一个基于 C++23、CMake ≥ 3.28 和 Conan 2 的 LearnOpenGL（http://learnopengl.com）学习仓库，目标平台为 Windows。每个示例是独立可执行程序，按教程章节分组。当前代码进度：`01_getting_started`（7 例 + 03_shaders 3 个练习目标）、`02_lighting`（6 例）、`03_model_loading`（3 例）、`04_advanced_opengl`（11 例、48 个模式）、`05_advanced_lighting`（10 例、63 个模式）与 `06_pbr`（3 例、23 个模式；4 篇教程含理论篇）；现有配套教程文件共 44 篇。第 04 章按官方中文上游固定提交 `331560886468e28f28326429334fc48470f9c27b` 重修，74 项标题及非标题教学内容对应见 `docs/04_advanced_opengl/coverage.md`；第 05 章使用同一上游提交，68 项标题及非标题内容对应见 `docs/05_advanced_lighting/coverage.md`；第 06 章保留同一固定上游版本的 38 项标题与非标题教学内容，对应见 `docs/06_pbr/coverage.md`；前 01–03 章尚需按加强后的逐项契约另行核验。无 CI、无测试框架（尚未配置）。
+OpenGL Lab 是一个基于 C++23、CMake ≥ 3.28 和 Conan 2 的 LearnOpenGL（http://learnopengl.com）学习仓库，目标平台为 Windows。每个示例是独立可执行程序，按教程章节分组。当前代码进度：`01_getting_started`（7 例 + 03_shaders 3 个练习目标）、`02_lighting`（6 例）、`03_model_loading`（3 例）、`04_advanced_opengl`（11 例、48 个模式）、`05_advanced_lighting`（10 例、63 个模式）与 `06_pbr`（3 例、23 个模式；4 篇教程含理论篇）；现有配套教程文件共 45 篇。第 04 章按官方中文上游固定提交 `331560886468e28f28326429334fc48470f9c27b` 重修，74 项标题及非标题教学内容对应见 `docs/04_advanced_opengl/coverage.md`；第 05 章使用同一上游提交，68 项标题及非标题内容对应见 `docs/05_advanced_lighting/coverage.md`；第 06 章保留同一固定上游版本的 38 项标题与非标题教学内容，对应见 `docs/06_pbr/coverage.md`；前 01–03 章已按同一底本建立首轮覆盖清单（20 篇、163 个标题、93 次媒体引用），已确认教学缺口与待复核项，尚未通过完整内容验收。无 CI、无测试框架（尚未配置）。
 
 ## 架构与数据流
 
@@ -75,12 +75,12 @@ cmake --build --preset mingw-gcc-debug
 
 - 目标平台 Windows；主开发工具链 MSYS2 MinGW GCC（UCRT64），其余 preset 需对应工具链就绪。C++23（GCC 扩展关闭），Conan profile 固定 `cppstd 23`。
 - clangd：依赖源码根 `compile_commands.json`；`.clangd` 已配严格 include 诊断、clang-tidy 覆盖、inlay hints，并移除 MSVC 的 `/Fo*`/`/Fd*`/`/FS` 标志。
-- 无 sanitizer 配置；无 CI；无脚本（除 conanfile.py）。
+- 无 sanitizer 配置；无 CI；暂不引入仓库 QA 脚本入口。
 - 运行时交互约定（跨示例一致）：Esc 退出、WASD + 鼠标移动相机（07 起）、滚轮缩放 FOV、纹理加载自 `assets/textures/`、模型加载自 `assets/models/`（控制台打印场景统计）。Git Bash 下运行新构建 exe 若立即退出（退出码 127），是 Git 自带 `mingw64/bin` 抢占运行时 DLL 所致，需把 `ucrt64/bin` 提到 PATH 最前或改用 PowerShell。
 
 ## 测试与 QA
 
-- **测试框架尚未配置**：无 `tests/` 目录、无 CTest 接入（无 `enable_testing`/`add_test`/`testPresets`）、无测试依赖。当前冒烟检查 = configure + build 成功。
+- **测试框架尚未配置**：无 `tests/` 目录、无 CTest 接入（无 `enable_testing`/`add_test`/`testPresets`）、无测试依赖。现有构建检查为 configure + build；必要时临时验证运行、错误处理与视觉效果，结果写入对应章节记录，不新增仓库 QA 入口。
 - **约定**（新增可复用代码时启用）：在 `tests/` 下添加 `test_<feature>.cpp`，接入 CTest，用 `ctest --test-dir build/<preset>` 运行。
 - `.gitignore` 已预留 `Testing/`、`.cache/` 忽略项。
 
@@ -90,7 +90,7 @@ cmake --build --preset mingw-gcc-debug
 
 ### 上游对齐与内容完整性（必须）
 
-- **权威底本**：以 [LearnOpenGL-CN/LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN) 的对应章节为中文底本；`with-fair-wind/LearnOpenGL-CN` 等 fork 可作辅助对照，不能取代上游。开始新增或重修时记录所用上游分支、完整 commit SHA 和文件路径，按该明确版本验收；技术事实另以对应版本的英文原文和 GLFW/OpenGL/GLSL 规范核校。
+- **权威底本**：以 [LearnOpenGL-CN/LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN) 的对应章节为中文底本；`with-fair-wind/LearnOpenGL-CN` 等 fork 可作辅助对照，不能取代上游。开始新增或重修时记录所用上游分支、完整 commit SHA 和文件路径，按该明确版本验收；中文底本用于盘点内容范围，不是技术事实的最终依据。描述、公式、参数与案例语义必须逐项对照英文原文；中英文任一版本存在不准确或过时内容时，以适用版本的 OpenGL/GLSL、GLFW 及相关库规范和实际实现核校后给出正确解释。
 - **逐篇、逐小节保留**：覆盖上游对应章节的全部教程篇目，以及每篇所有层级的正文小节、子小节、练习、译注和附加资源。保留其教学顺序与层级关系；上游一篇有多个 H1 时，可按本仓库单 H1 格式规范化标题级别，但必须保留这些标题对应的内容与相对层级。标题可纠正术语、错字和排版，不能借改名、合并或降级隐藏内容缺口。
 - **内容同等覆盖**：每个对应小节必须保留其概念、解释、推导步骤、公式、API 参数与状态含义、案例过程、注意事项及练习要求。允许修正错误、改善中文表达和适配工程，不能将完整教程改写为知识概要、API 速查或简化示例说明。仅有同名标题或一句概述不算覆盖；字数、标题数量与文件数量也不能代替内容核验。
 - **主案例不得降为练习**：上游正文展开的案例必须在本地同等展开，不能因现有程序尚未实现而删掉、缩成“延伸阅读”，或改称留给读者的练习。例如几何着色器的房子、爆破和法线可视化，实例化的小行星带与矩阵实例属性，帧缓冲的卷积、模糊和边缘检测，均属于应保留的教学内容。上游原有练习同样必须保留，不能拿它们替代被删掉的正文案例。
@@ -106,6 +106,8 @@ cmake --build --preset mingw-gcc-debug
 4. **分别验收内容与实现**：内容验收检查是否遗漏、缩写或改变原小节教学目标；实现验收检查代码引用、构建、运行和视觉效果。任一项未通过，均明确标记为待补齐，不能用构建成功、截图存在或链接可解析宣称整章完成。
 
 ### 格式、代码引用与讲解规范
+
+- **来源展示**：每篇保留简洁来源链接、作者、译者与校对者；分支、完整提交号、源文件路径和验收状态集中在章节 `coverage.md`，不要在正文及章索引反复展示。仅当技术差异影响理解时，在对应位置简短说明修正依据。
 
 - **命名**：`docs/<章节>/<NN>_<slug>.md`（snake_case，与 `apps/` 目录一致）；每章一个索引 `README.md`；图片放 `docs/img/<章节>/<NN>/`，文中用相对路径 `![](../img/<章节>/<NN>/xxx.png)`。
 - **结构**：H1 中文标题 → 元数据表（原文/作者/来源，示例篇加"本仓库示例"行）→ 正文 → `## 本仓库示例`（示例路径 + 构建/运行命令，仅示例篇）→ `## 本章整体回顾` → 底部"下一节"链接（链式串联；末篇指向下一章节，章节未写时用纯文本指引而非断链）。

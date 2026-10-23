@@ -6,9 +6,8 @@
 | 作者 | Joey de Vries |
 | 翻译 | Krasjet |
 | 校对 | 暂未校对 |
-| 中文底本 | [LearnOpenGL-CN 固定版本](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/05%20Advanced%20Lighting/01%20Advanced%20Lighting.md)，`new-theme` / `331560886468e28f28326429334fc48470f9c27b` |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/05%20Advanced%20Lighting/01%20Advanced%20Lighting.md) |
 | 本仓库示例 | [main.cpp](../../apps/05_advanced_lighting/01_advanced_lighting/main.cpp) |
-| 修订与范围 | [逐项覆盖与验证记录](coverage.md)；纯 GFM，代码片段逐字取自对应源码 |
 
 第二章用环境光、漫反射和镜面反射近似表面光照。本篇只替换镜面项，观察低高光指数时的截断现象。**Blinn-Phong 用半程向量与法线的夹角构造高光，Phong 用反射方向与观察方向的夹角构造高光。** 两者都是经验模型，不是完整的物理材质模型。
 

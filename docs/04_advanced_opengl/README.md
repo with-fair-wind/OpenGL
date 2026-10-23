@@ -1,6 +1,6 @@
 # 高级 OpenGL 教程（04 章）
 
-本章按 [LearnOpenGL-CN 官方上游](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN) 的 11 篇文章修订。底本固定为 `new-theme` 分支提交 `331560886468e28f28326429334fc48470f9c27b`，保留原小节顺序、正文案例、推导、图示、提示、练习和资源，技术事实结合英文原文与 OpenGL/GLSL 规范核校。74 项标题对应及非标题内容核验见[覆盖清单](coverage.md)。
+本章学习深度与模板测试、混合、面剔除、帧缓冲、立方体贴图、缓冲数据、GLSL、几何着色器、实例化和抗锯齿，共 11 个独立示例。教程参考 [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN) 与英文原文修订，来源版本、内容对应与验证记录见 [覆盖清单](coverage.md)。
 
 ## 篇章列表
 

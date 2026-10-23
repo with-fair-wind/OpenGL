@@ -6,9 +6,8 @@
 | 作者 | Joey de Vries |
 | 翻译 | Krasjet |
 | 校对 | 暂未校对 |
-| 中文底本 | [LearnOpenGL-CN 上游固定版本](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/04%20Advanced%20OpenGL/10%20Instancing.md)，`new-theme` / `331560886468e28f28326429334fc48470f9c27b` |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/04%20Advanced%20OpenGL/10%20Instancing.md) |
 | 本仓库示例 | [`apps/04_advanced_opengl/10_instancing/main.cpp`](../../apps/04_advanced_opengl/10_instancing/main.cpp) |
-| 修订 | 按上游完整小节顺序重写，技术差异见正文；[逐项覆盖清单](coverage.md) |
 
 **实例化把同一网格的多份绘制合成较少的提交，再用实例编号或实例属性区分位置、颜色和变换。** 草丛、粒子和小行星常有这种结构：几何相同，但每份的位置或姿态不同。逐物体设置 uniform 再 draw 会增加 CPU 提交和驱动工作；瓶颈是否在这里需要实际测量，不能断言任意绘制都由总线通信主导。
 

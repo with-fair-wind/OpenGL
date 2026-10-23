@@ -4,8 +4,10 @@
 | --- | --- |
 | 原文 | [Shaders](http://learnopengl.com/#!Getting-started/Shaders) |
 | 作者 | JoeyDeVries |
-| 来源 | LearnOpenGL-CN（本文基于其内容整理修订） |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/01%20Getting%20started/05%20Shaders.md) |
 | 本仓库示例 | `apps/01_getting_started/03_shaders/` |
+| 翻译 | [Django](http://bullteacher.com/), Krasjet, Geequlim |
+| 校对 | 暂未校对 |
 
 在「你好，三角形」教程中提到，着色器（Shader）是运行在 GPU 上的小程序。这些小程序为图形渲染管线的某个特定部分而运行。从基本意义上来说，着色器只是一种把输入转化为输出的程序。着色器也是非常独立的程序，因为它们之间不能相互通信；它们之间唯一的沟通只能通过输入和输出。
 
@@ -24,6 +26,8 @@
 下面先用概念示例介绍 GLSL 语法；这些片段用于独立说明语言和查询接口，并非仓库 `main.cpp` 的摘录。后面的顶点/片段着色器与顶点属性配置再对应本仓库实际代码。
 
 一个典型的着色器有下面的结构（占位伪代码，不能直接编译）：
+
+独立概念示例（不是 `apps/` 源码摘录；需结合本节说明的上下文使用）：
 
 ```glsl
 #version version_number
@@ -44,6 +48,8 @@ void main()
 ```
 
 当我们特别谈论到顶点着色器的时候，每个输入变量也叫**顶点属性**（Vertex Attribute）。我们能声明的顶点属性是有上限的，它一般由硬件决定。OpenGL 确保至少有 16 个包含 4 分量的顶点属性可用，但是有些硬件或许允许更多的顶点属性，你可以查询 `GL_MAX_VERTEX_ATTRIBS` 来获取具体的上限：
+
+独立概念示例（不是 `apps/` 源码摘录；需结合本节说明的上下文使用）：
 
 ```c++
 GLint max_vertex_attributes{};
@@ -81,6 +87,8 @@ GLSL 中的向量是一个可以包含 2、3 或 4 个分量的容器，分量�
 
 向量这一数据类型也允许一些有趣而灵活的分量选择方式，叫做**重组**（Swizzling）。重组允许这样的语法：
 
+独立概念示例（不是 `apps/` 源码摘录；需结合本节说明的上下文使用）：
+
 ```glsl
 vec2 some_vec = vec2(0.5, 0.7);
 vec4 different_vec = some_vec.xyxx;
@@ -89,6 +97,8 @@ vec4 other_vec = some_vec.xxxx + another_vec.yxzy;
 ```
 
 你可以用上面 4 个字母做任意组合（最多 4 个）来创建一个新的（同类型）向量，只要原向量包含这些分量即可；例如，你不允许在一个 `vec2` 向量中去获取 `.z` 分量。我们也可以把一个向量作为参数传给不同的向量构造函数，以减少所需参数的数量：
+
+独立概念示例（不是 `apps/` 源码摘录；需结合本节说明的上下文使用）：
 
 ```glsl
 vec2 vect = vec2(0.5, 0.7);
@@ -191,6 +201,10 @@ uniform 对于设置一个在渲染迭代中会改变的属性是非常有用的
 > - 返回 `-1` 不是「位置是 0」，而是「没找到」——最常见的原因是编译器把没被使用的 uniform 优化掉了，所以教程才反复提醒「别声明用不到的 uniform」；代码里必须显式检查 `-1`。
 > - uniform 位置在程序**重新链接**后可能变化，链接一次、缓存一次即可；改过 GLSL 源码并重新链接后要重新查询。
 > - 本仓库 06 纹理示例正是这个模式：初始化阶段缓存 `texture1` 的位置并做 `-1` 检查，渲染循环里直接 `glUniform1i(texture_uniform, 0)`。
+
+底本的动态 uniform 颜色示例演示了逐帧上传颜色后的变化（上游演示，并非当前渐变三角形程序的运行录屏）：
+
+[播放 uniform 颜色变化演示](../img/01/05/shaders.mp4)
 
 ## 更多属性！
 

@@ -39,6 +39,19 @@
 
 namespace {
 
+/** @brief 当前渲染线程是否已发生 API 错误；GLAD 调试回调不可把错误悄悄消费掉。 */
+bool api_error{false};
+#ifdef GLAD_DEBUG
+/** @brief 使用原始函数指针查询，避免递归调用 GLAD 的调试包装层。 */
+void after_gl_call(const char* name, void*, int, ...) {
+    // OpenGL: 原始查询不再触发 GLAD 回调；保存错误标记，避免查询消费后丢失失败状态。
+    for (GLenum error{glad_glGetError()}; error != GL_NO_ERROR; error = glad_glGetError()) {
+        std::cerr << "OpenGL call failed: " << name << ": " << error << '\n';
+        api_error = true;
+    }
+}
+#endif
+
 /** @brief 初始客户区尺寸；实际绘制使用 GLFW 报告的帧缓冲尺寸。 */
 constexpr int window_width{800};
 constexpr int window_height{600};
@@ -201,7 +214,7 @@ bool key_pressed(GLFWwindow* window, int key, bool& previous) {
 /** @brief 记录 OpenGL 错误，并按需在交换前读取默认后缓冲保存 PPM。 */
 bool finish_frame(GLFWwindow* window, const run_options& options, int frame, int width,
                   int height) {
-    bool success{true};
+    bool success{!api_error};
     if (options.frame_limit > 0 && frame == options.frame_limit && !options.capture_path.empty()) {
         std::vector<unsigned char> pixels(static_cast<std::size_t>(width) *
                                           static_cast<std::size_t>(height) * 3U);
@@ -236,7 +249,7 @@ bool finish_frame(GLFWwindow* window, const run_options& options, int frame, int
         // GLFW: 标记结束渲染循环，资源在循环退出后释放。
         glfwSetWindowShouldClose(window, GLFW_TRUE);
     }
-    return success;
+    return success && !api_error;
 }
 
 // Camera: 复用入门章的键鼠相机；每个示例保留自己的状态与回调。
@@ -703,6 +716,10 @@ int main(int argc, char** argv) {
         glfwTerminate();
         return EXIT_FAILURE;
     }
+#ifdef GLAD_DEBUG
+    // OpenGL: GLAD 调试版本的回调记录错误到 api_error，使有限帧运行返回失败。
+    glad_set_post_callback(after_gl_call);
+#endif
     // GLFW: 注册物理像素尺寸变化通知。
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     // GLFW: 注册鼠标移动回调以更新视角。
@@ -716,7 +733,12 @@ int main(int argc, char** argv) {
     // OpenGL: 读取当前驱动标识用于冒烟日志。
     std::cout << "Renderer: " << glGetString(GL_RENDERER) << '\n';
     const int result{run(window, options)};
+    // OpenGL: 非调试生成器也检查资源销毁或末次事件回调留下的错误。
+    for (GLenum error{glGetError()}; error != GL_NO_ERROR; error = glGetError()) {
+        std::cerr << "OpenGL error: " << error << '\n';
+        api_error = true;
+    }
     glfwDestroyWindow(window);
     glfwTerminate();
-    return result;
+    return result == EXIT_SUCCESS && !api_error ? EXIT_SUCCESS : EXIT_FAILURE;
 }

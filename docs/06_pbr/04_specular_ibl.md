@@ -6,7 +6,7 @@
 | 作者 | Joey de Vries |
 | 翻译 | [flyingSnow](https://github.com/flyingSnow-hu) |
 | 校对 | 上游未署名 |
-| 来源 | [LearnOpenGL-CN 固定底本](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/07%20PBR/03%20IBL/02%20Specular%20IBL.md)；本仓库整理、纠错与代码适配 |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/07%20PBR/03%20IBL/02%20Specular%20IBL.md) |
 | 本仓库示例 | [`06_pbr__04_specular_ibl`](../../apps/06_pbr/04_specular_ibl/main.cpp) |
 
 **镜面 IBL 用按粗糙度预过滤的 HDR 环境与二维 BRDF LUT，近似替代运行时的大量环境采样。** 应用选择分割求和近似和参数约定，OpenGL/驱动负责逐面逐 mip 渲染及纹理查找，GLFW 管理交互与窗口。预计算只在初始化或首次需要对照贴图时发生，主循环直接采样结果。

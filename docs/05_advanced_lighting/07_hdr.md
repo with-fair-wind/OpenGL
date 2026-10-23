@@ -6,9 +6,8 @@
 | 作者 | Joey de Vries |
 | 翻译 | Krasjet |
 | 校对 | 暂无 |
-| 中文底本 | [LearnOpenGL-CN 固定版本](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/05%20Advanced%20Lighting/06%20HDR.md)，`new-theme` / `331560886468e28f28326429334fc48470f9c27b` |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/05%20Advanced%20Lighting/06%20HDR.md) |
 | 本仓库示例 | [main.cpp](../../apps/05_advanced_lighting/07_hdr/main.cpp) |
-| 修订与范围 | [逐项覆盖与验证记录](coverage.md)；纯 GFM，代码片段逐字取自对应源码 |
 
 **HDR 渲染先保留超过 1 的线性光照结果，再通过色调映射得到适合输出的范围。** 使用常见归一化定点颜色附件时，多个亮光相加后的值可能被钳到 1，原来不同的亮部都变成相同数值，后续再降低亮度也无法找回差别。
 

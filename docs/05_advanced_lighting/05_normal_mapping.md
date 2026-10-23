@@ -6,9 +6,8 @@
 | 作者 | Joey de Vries |
 | 翻译 | [Django](http://bullteacher.com/) |
 | 校对 | [KenLee](https://hellokenlee.github.io/) |
-| 中文底本 | [LearnOpenGL-CN 固定版本](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/05%20Advanced%20Lighting/04%20Normal%20Mapping.md)，`new-theme` / `331560886468e28f28326429334fc48470f9c27b` |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/05%20Advanced%20Lighting/04%20Normal%20Mapping.md) |
 | 本仓库示例 | [main.cpp](../../apps/05_advanced_lighting/05_normal_mapping/main.cpp) |
-| 修订与范围 | [逐项覆盖与验证记录](coverage.md)；纯 GFM，代码片段逐字取自对应源码 |
 
 **法线贴图改变光照使用的局部法线方向，不改变三角形位置或真实轮廓。** 在平面上只贴砖墙颜色，光照仍把它看作一个平面：砖缝和坑洞的颜色存在，却没有相应的方向变化。
 

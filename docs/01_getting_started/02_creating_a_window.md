@@ -4,7 +4,9 @@
 | --- | --- |
 | 原文 | [Creating a window](http://learnopengl.com/#!Getting-started/Creating-a-window) |
 | 作者 | JoeyDeVries |
-| 来源 | LearnOpenGL-CN（本文基于其内容整理修订） |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/01%20Getting%20started/02%20Creating%20a%20window.md) |
+| 翻译 | gjy_1992, Krasjet |
+| 校对 | 暂未校对 |
 
 > **译注：** 注意，由于作者对教程做出了更新，之前本节使用的是 GLEW 库，但现在改为了使用 GLAD 库，关于 GLEW 配置的部分现在已经被修改。本仓库同样采用 GLAD 方案。
 
@@ -159,17 +161,23 @@ GLFW 的安装与配置就到此为止。
 
 到这里还没有结束，我们仍然还有一件事要做。因为 OpenGL 只是一个标准/规范，具体的实现是由驱动开发商针对特定显卡实现的。由于 OpenGL 驱动版本众多，它大多数函数的位置都无法在编译时确定下来，需要在运行时查询。所以任务就落在了开发者身上：开发者需要在运行时获取函数地址并将其保存在一个函数指针中供以后使用。取得地址的方法[因平台而异](https://www.khronos.org/opengl/wiki/Load_OpenGL_Functions)，在 Windows 上会是类似这样：
 
+独立概念示例（不是 `apps/` 源码摘录；需结合本节说明的上下文使用）：
+
 ```c++
-// 定义函数原型
-typedef void (*GL_GENBUFFERS)(GLsizei, GLuint*);
-// 找到正确的函数并赋值给函数指针
-GL_GENBUFFERS glGenBuffers = (GL_GENBUFFERS)wglGetProcAddress("glGenBuffers");
-// 现在函数可以被正常调用了
+// 前提：当前线程已有有效的 OpenGL 上下文；所需类型由 GLAD/GLFW 头文件声明。
+// GLFW 负责处理各平台的函数地址查询，本段仅演示手动加载一个函数。
+using gen_buffers_function = void(APIENTRY*)(GLsizei, GLuint*);
+const auto generate_buffers{
+    reinterpret_cast<gen_buffers_function>(glfwGetProcAddress("glGenBuffers"))};
+if (generate_buffers == nullptr) {
+    std::cerr << "Cannot load glGenBuffers\n";
+    return EXIT_FAILURE;
+}
 GLuint buffer{};
-glGenBuffers(1, &buffer);
+generate_buffers(1, &buffer);
 ```
 
-你可以看到代码非常复杂，而且很繁琐，我们需要对每个可能使用的函数都重复这个过程。幸运的是，有些库能简化此过程，其中 **GLAD** 是目前流行且保持更新的库。
+Windows 上的底层加载通常涉及 `wglGetProcAddress` 与系统库导出查询；上面用 GLFW 的跨平台接口表达同一过程，避免把未经检查的地址直接当成函数调用。真实示例由 GLAD 批量完成加载，不需要应用逐个维护这样的指针。函数地址对应当前上下文，且必须检查查询失败，见 [GLFW 3.4 上下文接口](https://www.glfw.org/docs/3.4/group__context.html)。
 
 ### 分层解释：为什么函数地址必须运行时查询
 
@@ -186,7 +194,7 @@ glGenBuffers         NVIDIA: 0x7FFA...      glGenBuffers 只是声明
 
 - **编译期**：编译器只知道 `glGenBuffers` 的类型（参数和返回值），不知道它的地址——因为地址取决于你机器上的显卡驱动。
 - **运行期**：上下文创建之后，通过 `wglGetProcAddress`（Windows）/`glXGetProcAddress`（Linux）向驱动查询真实地址。
-- **GLAD**：把上面这套繁琐的查询过程自动化。调用一次 `gladLoadGLLoader(...)` 之后，所有的 `gl*` 函数指针都被填好了。
+- **GLAD**：把上面这套繁琐的查询过程自动化。`gladLoadGLLoader(...)` 按生成配置和当前上下文支持情况填充函数指针。加载成功不表示任意版本、任意扩展的 `gl*` 入口都可用。
 
 > **常见误解：** 有人以为 `#include <glad/glad.h>` 之后，`glGenBuffers` 的实现就来自头文件。其实头文件只告诉编译器函数的类型（参数、返回值），函数本体位于显卡驱动中；`gladLoadGLLoader` 运行之后，函数指针才真正指向驱动里的实现。你可以把 GLAD 理解为"批量替你做 `GetProcAddress` 的 OpenGL 函数加载器"。
 

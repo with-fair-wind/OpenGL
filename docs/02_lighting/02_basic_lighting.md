@@ -4,8 +4,10 @@
 | --- | --- |
 | 原文 | [Basic Lighting](http://learnopengl.com/#!Lighting/Basic-Lighting) |
 | 作者 | JoeyDeVries |
-| 来源 | LearnOpenGL-CN（本文基于其内容整理修订） |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/02%20Lighting/02%20Basic%20Lighting.md) |
 | 本仓库示例 | [`apps/02_lighting/02_basic_lighting/`](../../apps/02_lighting/02_basic_lighting/) |
+| 翻译 | [Django](http://bullteacher.com/), Krasjet, Geequlim, [BLumia](https://github.com/blumia/) |
+| 校对 | [AoZhang](https://github.com/SuperAoao) |
 
 现实世界的光照是极其复杂的，而且会受到诸多因素的影响，这是我们有限的计算能力所无法模拟的。因此 OpenGL 的光照使用的是简化的模型，对现实的情况进行近似，这样处理起来会更容易一些，而且看起来也差不多一样。这些光照模型都是基于我们对光的物理特性的理解。其中一个模型被称为**冯氏光照模型**（Phong Lighting Model）。冯氏光照模型的主要结构由 3 个分量组成：环境（Ambient）、漫反射（Diffuse）和镜面（Specular）光照。下面这张图展示了这些光照分量看起来的样子：
 
@@ -47,6 +49,10 @@ flowchart LR
 ```
 
 如果你现在运行程序，你会注意到冯氏光照的第一个阶段已经应用到你的物体上了。这个物体非常暗，但由于应用了环境光照（注意光源立方体没受影响，是因为我们对它使用了另一个着色器），也不是完全黑的。
+
+只保留环境光时，箱子各面没有由光源方向产生的明暗差异：
+
+![](../img/02/02/ambient_lighting.png)
 
 ## 漫反射光照
 
@@ -245,7 +251,7 @@ void main()
 
 （本小节基于原文整理；本仓库把镜面光照与材质参数一起放在下一节实现。）要得到观察者的世界空间坐标，我们直接使用摄像机的位置向量即可（它当然就是那个观察者）。我们需要在片段着色器中添加一个 `view_pos` uniform，并把摄像机的位置向量传给着色器。同时定义一个镜面强度（Specular Intensity）变量，给镜面高光一个中等亮度颜色，让它不要产生过度的影响（原文取 0.5；本仓库下一节用材质结构体的 `material.specular` 承担同样的角色）。
 
-接下来计算视线方向向量和对应的沿法线轴的反射向量：
+接下来计算视线方向向量和对应的沿法线轴的反射向量。以下两段摘自 [材质示例 main.cpp](../../apps/02_lighting/03_materials/main.cpp) 的片段着色器；其中 `material` 与 `light` 是下一节介绍的结构体，本节基础程序尚未加入该镜面项：
 
 ```glsl
     vec3 view_dir = normalize(view_pos - frag_pos);
@@ -261,7 +267,7 @@ void main()
     vec3 specular = light.specular * spec * material.specular;
 ```
 
-（同样取自 `03_materials` 示例。）我们先计算视线方向与反射方向的点乘（并确保它不是负值），然后取它的 `material.shininess` 次幂——原文此处的指数是 32，下一节它作为材质参数 `shininess` 出现。一个物体的**反光度**（Shininess）越高，反射光的能力越强，散射得越少，高光点就会越小。在下面的图片里，你会看到不同反光度的视觉效果影响：
+（同样取自 `03_materials` 示例。）我们先计算视线方向与反射方向的点乘（并确保它不是负值），然后取它的 `material.shininess` 次幂——原文此处的指数是 32，下一节它作为材质参数 `shininess` 出现。在该经验公式中，**反光度指数**（Shininess）越大，高光越集中、范围越小；这并不表示物体反射的总能量更大，强度与颜色还由镜面系数控制。在下面的图片里，你会看到不同反光度的视觉效果影响：
 
 ![](../img/02/02/basic_lighting_specular_shininess.png)
 

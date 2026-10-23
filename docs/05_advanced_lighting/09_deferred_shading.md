@@ -6,9 +6,8 @@
 | 作者 | Joey de Vries |
 | 翻译 | Krasjet |
 | 校对 | [KenLee](https://hellokenlee.github.io/) |
-| 中文底本 | [LearnOpenGL-CN 固定版本](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/05%20Advanced%20Lighting/08%20Deferred%20Shading.md)，`new-theme` / `331560886468e28f28326429334fc48470f9c27b` |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/05%20Advanced%20Lighting/08%20Deferred%20Shading.md) |
 | 本仓库示例 | [main.cpp](../../apps/05_advanced_lighting/09_deferred_shading/main.cpp) |
-| 修订与范围 | [逐项覆盖与验证记录](coverage.md)；纯 GFM，代码片段逐字取自对应源码 |
 
 **延迟着色把可见表面的几何/材质记录下来，再在屏幕空间计算光照；它推迟的是光照，不是把所有绘制工作都省掉。** 正向渲染在对象绘制过程中计算光照，深度复杂度高且灯光多时可能重复计算被覆盖的片段。提前深度测试、深度预遍和光源剔除也能改善正向管线，因此不能把“大量光源对正向渲染几乎不可能”作为普适结论。
 

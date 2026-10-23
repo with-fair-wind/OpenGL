@@ -6,9 +6,8 @@
 | 作者 | Joey de Vries |
 | 翻译 | Krasjet |
 | 校对 | 暂未校对 |
-| 中文底本 | [LearnOpenGL-CN 上游固定版本](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/04%20Advanced%20OpenGL/02%20Stencil%20testing.md)，`new-theme` / `331560886468e28f28326429334fc48470f9c27b` |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/04%20Advanced%20OpenGL/02%20Stencil%20testing.md) |
 | 本仓库示例 | [`apps/04_advanced_opengl/02_stencil_testing/main.cpp`](../../apps/04_advanced_opengl/02_stencil_testing/main.cpp) |
-| 修订 | 按上游完整小节顺序重写，技术差异见正文；[逐项覆盖清单](coverage.md) |
 
 **模板测试用整数标记筛选片段，深度测试解决前后遮挡；两者可以组合，但不会彼此替代。** 模板缓冲常与深度一起以 `GL_DEPTH24_STENCIL8` 等格式存储。典型模板位数是 8，实际窗口格式由 GLFW 请求、窗口系统选择，应用不应无条件假定所有目标都有模板附件。
 

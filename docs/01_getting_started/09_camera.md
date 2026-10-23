@@ -4,8 +4,10 @@
 | --- | --- |
 | 原文 | [Camera](http://learnopengl.com/#!Getting-started/Camera) |
 | 作者 | JoeyDeVries |
-| 来源 | LearnOpenGL-CN（本文基于其内容整理修订） |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/01%20Getting%20started/09%20Camera.md) |
 | 本仓库示例 | [`apps/01_getting_started/07_camera/`](../../apps/01_getting_started/07_camera/) |
+| 翻译 | [Django](http://bullteacher.com/), Krasjet, Geequlim, [BLumia](https://github.com/blumia/) |
+| 校对 | 暂未校对 |
 
 上一节我们讨论了观察矩阵，并用一个固定位置的 `glm::lookAt` 把世界放到了相机视角。但 OpenGL 本身**没有摄像机**（Camera）的概念——我们只是把场景中的所有物体往相反方向移动，从而模拟出「**我们**在移动」的感觉。
 
@@ -28,7 +30,7 @@
 
 **一句话核心：** 摄像机位置就是世界空间中一个指向相机位置的向量。
 
-本仓库示例在 `main.cpp` 匿名命名空间的顶部保存相机状态——因为 GLFW 的回调是 C 风格函数，必须通过文件内（namespace 内）状态访问相机参数：
+本仓库示例在 `main.cpp` 的匿名命名空间中保存相机状态，便于展示回调与矩阵更新。GLFW 回调使用普通函数指针，但这不要求状态必须为全局变量；也可以通过 `glfwSetWindowUserPointer` 关联对象，再在回调中取回。见 [GLFW 窗口用户指针](https://www.glfw.org/docs/3.4/window_guide.html#window_userptr)。
 
 ```c++
 // Camera: GLFW 的键鼠回调是 C 风格函数，因此这里用少量 namespace 内状态保存相机参数。
@@ -43,12 +45,17 @@ glm::vec3 camera_up{0.0F, 1.0F, 0.0F};
 
 下一个需要的向量是摄像机的方向——它指向哪里。这里我们用 `camera_front`（指向 z 轴负方向）表示相机**看向的方向**，而不是用「从目标指向相机」的反向向量。这样 `glm::lookAt` 可以直接用 `camera_position + camera_front` 作为观察目标点。
 
-### 3. 右轴与上轴
+### 3. 右轴
 
-**一句话核心：** 右轴 = 上向量 × 方向向量（叉乘）；上轴 = 方向向量 × 右轴。叉乘能从两个已知向量构造出第三个互相垂直的向量——这就是上一节数学知识的第一次实战。
+**一句话核心：** 若 `camera_front` 指向视线前方，右轴是 `normalize(cross(camera_front, world_up))`；由它构造的观察上轴是 `cross(right, camera_front)`。底本的方向轴 `D` 则指向观察者后方，即 `D = -camera_front`，因此也可以写成 `R = normalize(cross(world_up, D))`、`U = cross(D, R)`。两套写法不能混用方向约定。
 
 - **右向量**（Right Vector，摄像机空间 x 轴正方向）：用方向向量和上向量做叉乘得到（即下文 `process_input` 里的 `glm::cross(camera_front, camera_up)`；顺序颠倒会得到指向负 x 轴的向量）。两个向量叉乘的结果同时垂直于两者，于是得到指向 x 轴正方向的向量。
-- **上向量**（Up Vector，摄像机空间 y 轴正方向）：把右向量和方向向量再叉乘一次。上向量并不需要与「世界上方」完全一致——摄像机倾斜时它随之倾斜，这正是第一人称相机该有的行为。
+
+### 4. 上轴
+
+由右轴与视线前方的叉乘得到观察上轴，它与右轴、视线方向互相垂直。作为构造参考的 `world_up` 与最终观察上轴不是同一个量：本例传给 `lookAt` 的 `camera_up` 固定为世界上方 `(0, 1, 0)`，函数内部会重新构造正交基。俯仰后得到的观察上轴可以偏离世界上方，但本例没有独立滚转控制。
+
+修订依据：[英文 Camera 的方向轴、右轴与上轴推导](https://learnopengl.com/Getting-started/Camera)。底本反向轴 `D` 与本仓库前向向量 `camera_front` 的符号差异必须贯穿后面的观察矩阵。
 
 在线性代数中，这个用三个正交轴构造坐标空间的过程叫做[格拉姆—施密特正交化](http://en.wikipedia.org/wiki/Gram%E2%80%93Schmidt_process)（Gram-Schmidt Process）。本仓库没有单独保存 `camera_right`，而是在每帧需要时现场计算（见下文 `process_input`）。
 
@@ -62,7 +69,7 @@ $$
 LookAt = \begin{bmatrix} \color{red}{R_x} & \color{red}{R_y} & \color{red}{R_z} & 0 \\ \color{green}{U_x} & \color{green}{U_y} & \color{green}{U_z} & 0 \\ \color{blue}{D_x} & \color{blue}{D_y} & \color{blue}{D_z} & 0 \\ 0 & 0 & 0 & 1 \end{bmatrix} \cdot \begin{bmatrix} 1 & 0 & 0 & -\color{purple}{P_x} \\ 0 & 1 & 0 & -\color{purple}{P_y} \\ 0 & 0 & 1 & -\color{purple}{P_z} \\ 0 & 0 & 0 & 1 \end{bmatrix}
 $$
 
-其中 \(\color{red}R\) 是右向量、\(\color{green}U\) 是上向量、\(\color{blue}D\) 是方向向量、\(\color{purple}P\) 是摄像机位置。位置取反是因为我们最终要把世界平移到与我们自身移动的**相反方向**。把这个矩阵作为观察矩阵，就能高效地把所有世界坐标变换到观察空间。
+其中 $\color{red}R$ 是右向量、$\color{green}U$ 是正交化后的观察上向量、$\color{blue}D$ 是指向观察者后方的轴（`-camera_front`）、$\color{purple}P$ 是摄像机位置。位置取反是因为我们最终要把世界平移到与我们自身移动的**相反方向**。把这个矩阵作为观察矩阵，就能把所有世界坐标变换到观察空间。
 
 GLM 已经提供完整实现，只需提供位置、目标和上向量：
 
@@ -149,11 +156,11 @@ void process_input(GLFWwindow* window) {
 
 俯仰角描述我们如何往上/往下看，偏航角描述往左/往右看的程度，滚转角描述「翻滚」摄像机（通常在太空飞船摄像机中使用）。对本仓库的 FPS 摄像机，我们只关心俯仰角和偏航角。
 
-给定俯仰角 \(\theta\) 和偏航角 \(\phi\)，把它们转换为 3D 方向向量需要一点三角学。首先，把斜边长度定义为 1，则邻边是 \(\cos x\)、对边是 \(\sin y\)：
+给定俯仰角 $\theta$ 和偏航角 $\phi$，把它们转换为 3D 方向向量需要一点三角学。首先，把斜边长度定义为 1，令该锐角为 $\alpha$，则邻边长度为 $\cos\alpha$、对边长度为 $\sin\alpha$。两者使用同一个角，不能把坐标分量当成不同的角：
 
 ![](../img/01/09/camera_triangle.png)
 
-由此，俯仰角决定 y 分量（向上看多少）和 x/z 方向的长度（从三角形可知 x、z 分量都含 \(\cos(pitch)\)）：
+由此，俯仰角决定 y 分量（向上看多少）和 x/z 方向的长度（从三角形可知 x、z 分量都含 $\cos(pitch)$）：
 
 ![](../img/01/09/camera_pitch.png)
 
@@ -299,7 +306,7 @@ flowchart LR
 > **进阶（欧拉角与万向锁，为什么游戏常用四元数）：** 只用 yaw/pitch/roll 三个角度描述旋转，在特定姿态下会丢失一个旋转自由度——这就是**万向锁**（Gimbal Lock）：
 >
 > - 当 pitch 转到 ±90° 时，yaw 与 roll 的旋转轴在空间中对齐，两个角度只能描述同一个方向的转动，某个轴上的转动变得不可达；这也是本节把 pitch 钳制在 ±89° 的原因之一。
-> - 因此游戏引擎普遍用**四元数**（Quaternion）表示旋转：四个分量、天然无万向锁、两个姿态之间可平滑插值（slerp），而且比 4×4 矩阵更省内存。GLM 的 `glm::quat` 与 `glm::rotate(quat, ...)` 可以无缝替换本节的角度方案。
+> - 单位四元数可以保存完整姿态并用于球面插值（slerp），避免把三个欧拉角作为内部姿态参数；但它不是直接替换几个函数就能接入的方案。还需规定旋转轴所属空间、组合顺序、单位长度维护和输入限制；若仍转回欧拉角处理，奇异位置仍可能出现。
 > - 本仓库出于教学保持「欧拉角 + 旋转矩阵」的简单路线，理解其局限即可；后续章节（如光照）不依赖旋转的具体表示方式，可以放心继续。
 
 ## 练习

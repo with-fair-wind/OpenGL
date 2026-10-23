@@ -6,9 +6,8 @@
 | 作者 | Joey de Vries |
 | 翻译 | Krasjet |
 | 校对 | [AoZhang](https://github.com/SuperAoao) |
-| 中文底本 | [LearnOpenGL-CN 上游固定版本](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/04%20Advanced%20OpenGL/05%20Framebuffers.md)，`new-theme` / `331560886468e28f28326429334fc48470f9c27b` |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/04%20Advanced%20OpenGL/05%20Framebuffers.md) |
 | 本仓库示例 | [`apps/04_advanced_opengl/05_framebuffers/main.cpp`](../../apps/04_advanced_opengl/05_framebuffers/main.cpp) |
-| 修订 | 按上游完整小节顺序重写，技术差异见正文；[逐项覆盖清单](coverage.md) |
 
 **帧缓冲对象（FBO）组织绘制结果写到哪里，附件才提供颜色、深度和模板的存储。** 此前绘制到编号 0 的默认帧缓冲，由窗口系统管理；现在由应用创建离屏附件，把场景先保存成纹理，再将纹理画回窗口。
 

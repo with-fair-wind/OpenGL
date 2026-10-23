@@ -6,9 +6,8 @@
 | 作者 | Joey de Vries |
 | 翻译 | Krasjet |
 | 校对 | 暂未校对 |
-| 中文底本 | [LearnOpenGL-CN 上游固定版本](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/04%20Advanced%20OpenGL/09%20Geometry%20Shader.md)，`new-theme` / `331560886468e28f28326429334fc48470f9c27b` |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/04%20Advanced%20OpenGL/09%20Geometry%20Shader.md) |
 | 本仓库示例 | [`apps/04_advanced_opengl/09_geometry_shader/main.cpp`](../../apps/04_advanced_opengl/09_geometry_shader/main.cpp) |
-| 修订 | 按上游完整小节顺序重写，技术差异见正文；[逐项覆盖清单](coverage.md) |
 
 **几何着色器按一个输入图元处理一组顶点，再显式发射零个或多个输出图元。** 它位于顶点阶段之后、光栅化之前，可以从点生成线和三角形，也可以修改模型三角形或为调试生成辅助线。它是可选阶段，不是每个程序都必须经过的共享工具。
 

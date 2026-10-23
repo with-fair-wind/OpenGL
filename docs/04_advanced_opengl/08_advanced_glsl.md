@@ -6,9 +6,8 @@
 | 作者 | Joey de Vries |
 | 翻译 | Krasjet |
 | 校对 | AoZhang |
-| 中文底本 | [LearnOpenGL-CN 上游固定版本](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/04%20Advanced%20OpenGL/08%20Advanced%20GLSL.md)，`new-theme` / `331560886468e28f28326429334fc48470f9c27b` |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/04%20Advanced%20OpenGL/08%20Advanced%20GLSL.md) |
 | 本仓库示例 | [`apps/04_advanced_opengl/08_advanced_glsl/main.cpp`](../../apps/04_advanced_opengl/08_advanced_glsl/main.cpp) |
-| 修订 | 按上游完整小节顺序重写，技术差异见正文；[逐项覆盖清单](coverage.md) |
 
 **GLSL 内建变量、阶段接口块和 uniform 块解决三类问题：阶段语义、数据组织和多程序共享参数。** 它们都出现在 shader 中，但来源、可写性和更新方式不同。OpenGL/GLSL 规范定义这些接口，驱动负责编译链接和数据读取，应用负责缓冲布局与绑定，GLFW 只提供有效上下文。
 

@@ -4,8 +4,10 @@
 | --- | --- |
 | 原文 | [Multiple lights](http://learnopengl.com/#!Lighting/Multiple-lights) |
 | 作者 | JoeyDeVries |
-| 来源 | LearnOpenGL-CN（本文基于其内容整理修订） |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/02%20Lighting/06%20Multiple%20lights.md) |
 | 本仓库示例 | [`apps/02_lighting/06_multiple_lights/`](../../apps/02_lighting/06_multiple_lights/) |
+| 翻译 | [Geequlim](http://geequlim.com), Krasjet |
+| 校对 | [AoZhang](https://github.com/SuperAoao) |
 
 我们在前面的教程中已经学习了许多关于 OpenGL 中光照的知识，其中包括冯氏着色（Phong Shading）、材质（Material）、光照贴图（Lighting Map）以及不同种类的投光物（Light Caster）。在这一节中，我们将结合之前学过的所有知识，创建一个包含六个光源的完全照明场景。我们将模拟一个类似太阳的定向光（Directional Light）光源，四个分散在场景中的点光源（Point Light），以及一个手电筒（Flashlight）。
 
@@ -244,7 +246,7 @@ cmake --build --preset mingw-gcc-debug
 本节完成光照章节的最后一步拼图：
 
 - **局部（组合方式）**：每种投光物一个 `calc_*_light` 函数，返回 RGB 后相加；uniform 数组 + 字段路径下标管理同类多灯；聚光灯复用相机位置变成手电筒（本仓库补全了原文留作练习的 `calc_spot_light`）。
-- **整体（光照章节全景）**：颜色相乘 → 法线与法线矩阵 → 冯氏三分量 → 材质结构体 → 贴图材质 → 投光物衰减/锥角 → 多光源组合。7 个示例层层递进，每一步只引入一个新概念。
+- **整体（光照章节全景）**：颜色相乘 → 法线与法线矩阵 → 冯氏三分量 → 材质结构体 → 贴图材质 → 投光物衰减/锥角 → 多光源组合。6 个示例层层递进，每一步只引入一个新概念，第 7 篇教程集中复习这些概念。
 - **再看「局部→整体」**：光照计算自始至终发生在**片段着色器**这一层，CPU 侧的工作只是「准备 uniform + 发出绘制调用」。这个架构能撑起很复杂的画面，却有一个天花板——场景里的物体依然是手写顶点数组。下一章「模型加载」引入 Assimp 库，把建模软件导出的完整模型（多 mesh、多材质、层级变换）装进本章搭好的光照管线。
 
-下一章：[Assimp](../03_model_loading/01_assimp.md)
+下一节：[复习](07_review.md)

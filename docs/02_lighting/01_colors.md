@@ -4,8 +4,10 @@
 | --- | --- |
 | 原文 | [Colors](http://learnopengl.com/#!Lighting/Colors) |
 | 作者 | JoeyDeVries |
-| 来源 | LearnOpenGL-CN（本文基于其内容整理修订） |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/02%20Lighting/01%20Colors.md) |
 | 本仓库示例 | [`apps/02_lighting/01_colors/`](../../apps/02_lighting/01_colors/) |
+| 翻译 | [Geequlim](http://geequlim.com/), Krasjet |
+| 校对 | [AoZhang](https://github.com/SuperAoao) |
 
 在前面的教程中我们已经简要提到过该如何在 OpenGL 中使用颜色（Color），但我们至今所接触到的都是很浅层的知识。本节我们将会更深入地讨论什么是颜色，并且还会为接下来的光照（Lighting）教程创建一个场景。
 
@@ -101,6 +103,7 @@ constexpr glm::vec3 light_color{1.0F, 1.0F, 1.0F};
 ```glsl
 #version 330 core
 out vec4 frag_color;
+
 uniform vec3 light_color;
 
 void main()

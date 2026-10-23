@@ -6,9 +6,8 @@
 | 作者 | Joey de Vries |
 | 翻译 | [Django](http://bullteacher.com/) |
 | 校对 | [AoZhang](https://github.com/SuperAoao) |
-| 中文底本 | [LearnOpenGL-CN 固定版本](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/05%20Advanced%20Lighting/02%20Gamma%20Correction.md)，`new-theme` / `331560886468e28f28326429334fc48470f9c27b` |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/05%20Advanced%20Lighting/02%20Gamma%20Correction.md) |
 | 本仓库示例 | [main.cpp](../../apps/05_advanced_lighting/02_gamma_correction/main.cpp) |
-| 修订与范围 | [逐项覆盖与验证记录](coverage.md)；纯 GFM，代码片段逐字取自对应源码 |
 
 **把颜色解码到线性空间进行光照，再对最终结果编码一次；不要对法线、深度等数据贴图应用颜色传递函数。** 本篇把图片中的数值、线性光照量与显示编码分开。原译文附有“尚未重写”的提示，本仓库已对照英文与 OpenGL 3.3 规范重写；其中关于人眼、设备和 sRGB 的绝对化说法不作为技术结论沿用。
 

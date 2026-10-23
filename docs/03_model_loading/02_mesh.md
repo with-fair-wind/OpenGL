@@ -4,8 +4,10 @@
 | --- | --- |
 | 原文 | [Mesh](http://learnopengl.com/#!Model-Loading/Mesh) |
 | 作者 | JoeyDeVries |
-| 来源 | LearnOpenGL-CN（本文基于其内容整理修订） |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/03%20Model%20Loading/02%20Mesh.md) |
 | 本仓库示例 | [`apps/03_model_loading/02_mesh/`](../../apps/03_model_loading/02_mesh/) |
+| 翻译 | Krasjet |
+| 校对 | [AoZhang](https://github.com/SuperAoao) |
 
 通过使用 Assimp，我们可以加载不同的模型到程序中，但是载入后它们都被储存为 Assimp 的数据结构。我们最终仍要将这些数据转换为 OpenGL 能够理解的格式，这样才能渲染这个物体。我们从上一节中学到，网格（Mesh）代表的是单个的可绘制实体，我们现在先来定义一个我们自己的网格封装。
 
@@ -80,12 +82,12 @@ Mesh make_mesh(const std::vector<Vertex>& vertices, const std::vector<GLuint>& i
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, static_cast<GLsizeiptr>(indices.size() * sizeof(GLuint)),
                  indices.data(), GL_STATIC_DRAW);
 
-    // OpenGL: attribute 偏移按交错布局计算——位置在结构体开头（偏移 0），
-    // 法线偏移 3 个 float，纹理坐标偏移 6 个 float；static_assert 保证布局紧密。
+    // OpenGL: 标准布局允许用 offsetof 查询成员偏移；步长保留结构体实际大小，包含填充。
+    static_assert(std::is_standard_layout_v<Vertex>, "Vertex must have standard layout");
+    static_assert(std::is_trivially_copyable_v<Vertex>, "Vertex must be trivially copyable");
     constexpr GLsizei vertex_stride{static_cast<GLsizei>(sizeof(Vertex))};
-    constexpr auto normal_offset{3 * sizeof(float)};
-    constexpr auto tex_coord_offset{6 * sizeof(float)};
-    static_assert(sizeof(Vertex) == 8 * sizeof(float), "Vertex must stay tightly packed");
+    constexpr auto normal_offset{offsetof(Vertex, normal)};
+    constexpr auto tex_coord_offset{offsetof(Vertex, tex_coords)};
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vertex_stride, nullptr);
     glEnableVertexAttribArray(0);
@@ -104,21 +106,21 @@ Mesh make_mesh(const std::vector<Vertex>& vertices, const std::vector<GLuint>& i
 
 代码应该和你所想的没什么不同，但有了 `Vertex` 结构体的帮助，事情变得非常优雅。
 
-C++ 结构体有一个很棒的特性：它们的内存布局是**连续的**（Sequential）。也就是说，如果我们将结构体作为一个数据数组使用，那么它将会以顺序排列结构体的变量，这会直接转换为我们在数组缓冲中所需要的 float（实际上是字节）数组。一个填充后的 `Vertex`，其内存布局等价于八个连续的 float（位置 3 + 法线 3 + 纹理坐标 2）。由于有了这个有用的特性，我们能够直接传入一大列 `Vertex` 结构体的指针作为缓冲的数据（上面的 `vertices.data()` + `size() * sizeof(Vertex)`），它们会完美地转换为 `glBufferData` 所能用的参数。自然 `sizeof` 运算也可以用在结构体上来计算它的字节大小——本仓库的 `Vertex` 正好是 32 字节（8 个 float × 每个 4 字节），`static_assert` 在编译期保证了这一点。
+`std::vector<Vertex>` 的元素在内存中连续存放，因此可用 `vertices.data()` 和 `vertices.size() * sizeof(Vertex)` 上传整个数组。结构体成员之间及末尾可能有对齐填充；不能由“成员总共有八个 float”就推断所有配置下都紧密排列。
 
-结构体的另外一个很好的用途是预处理指令 `offsetof(s, m)`：它的第一个参数是一个结构体，第二个参数是这个结构体中变量的名字。这个宏会返回那个变量距结构体头部的**字节偏移量**（Byte Offset）。原文正是用它来定义 `glVertexAttribPointer` 中的偏移参数——法线的偏移量自动跟随结构体中法线成员的位置（3 个 float，即 12 字节）。
+`sizeof(Vertex)` 给出包含填充的步长，`offsetof(Vertex, normal)` 与 `offsetof(Vertex, tex_coords)` 给出实际成员偏移。当前 GLM 1.0.1 / MinGW GCC 配置中，大小为 32 字节、两个偏移为 12 与 24 字节；代码使用查询结果而不是把这些数值写死。
 
-> **重要（本仓库对 offsetof 的取舍）：** 本仓库示例改用**固定偏移常量**（`3 * sizeof(float)`）+ `static_assert(sizeof(Vertex) == 8 * sizeof(float))`，原因在于：`Vertex` 含有 `glm::vec3` 成员，而 GLM 的向量类型含匿名联合、并非 C++ 标准保证的*标准布局*（standard layout）类型——对非标准布局类型使用 `offsetof` 在标准中是「有条件支持」的，部分编译器会发出警告。固定偏移 + 编译期大小断言达到同样的自洽：布局一旦变动，`static_assert` 立即报错。若你的顶点结构只含平凡类型，`offsetof` 仍是更优雅的选择。
+> **重要：** `offsetof` 对标准布局类型有标准保证；对非标准布局类型是有条件支持的。不能仅因成员是 `glm::vec3` 或内部使用联合，就断定整个顶点类型不是标准布局。示例通过 `std::is_standard_layout_v<Vertex>` 和 `std::is_trivially_copyable_v<Vertex>` 明确检查上传布局的前提。若库配置改变导致断言失败，应重新设计可上传的顶点表示，而不是忽略诊断。见 [C++ 标准：布局与成员偏移](https://eel.is/c++draft/support.types.layout)。
 
-使用这样的一个结构体不仅能够提供可读性更高的代码，也允许我们很容易地拓展这个结构。如果我们希望添加另一个顶点属性，我们只需要将它添加到结构体中、更新 `static_assert` 与对应的 attribute 设置就可以了。
+增加属性时，需要同时更新 `Vertex`、顶点着色器输入与 VAO 的属性配置；实际步长和已有成员偏移由 `sizeof/offsetof` 计算，不需要另行手算。
 
-> **进阶（VAO 与 EBO 的绑定关系）：** `glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo)` 发生在**某个 VAO 绑定期间**时，这个绑定会被记录进该 VAO 的状态——之后每次 `glBindVertexArray(vao)`，EBO 自动恢复。反过来，如果 VAO 未绑定（绑定 0）时解绑 EBO，VAO 内的记录不受影响。这就是 `make_mesh` 里「先绑 VAO、再绑 EBO」的顺序依据，也是为什么 `draw_mesh` 从不需要单独绑定 EBO。注意 VBO 没有这种记录：VAO 只存 attribute 指针（含它们引用的 VBO 绑定），不存「当前 GL_ARRAY_BUFFER 绑定」。
+> **进阶（VAO 与 EBO 的绑定关系）：** `glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo)` 发生在**某个 VAO 绑定期间**时，这个绑定会被记录进该 VAO 的状态——之后每次 `glBindVertexArray(vao)`，EBO 自动恢复。绑定某个 VAO 时解绑 EBO 会清空该 VAO 的元素缓冲绑定。核心配置下 VAO 0 不是可修改的 VAO，不应在绑定 0 时修改元素缓冲绑定；本例只解绑 VAO，不额外解绑 EBO。这就是 `make_mesh` 里「先绑 VAO、再绑 EBO」的顺序依据，也是为什么 `draw_mesh` 从不需要单独绑定 EBO。注意 VBO 没有这种记录：VAO 只存 attribute 指针（含它们引用的 VBO 绑定），不存「当前 GL_ARRAY_BUFFER 绑定」。
 
 ## 渲染
 
 我们需要为 Mesh 定义最后一个函数：绘制。在真正渲染这个网格之前，我们需要在调用 `glDrawElements` 函数之前先绑定相应的纹理。
 
-原文的难点在于：它事先并不知道这个网格（如果有的话）有多少纹理、纹理是什么类型。所以它设定了一个命名标准：每个漫反射纹理命名为 `texture_diffuseN`、每个镜面纹理命名为 `texture_specularN`（`N` 从 1 开始），着色器中据此声明 `uniform sampler2D texture_diffuse1; texture_diffuse2; ...`，`Draw` 函数在循环中拼出 uniform 名称、把每张贴图绑定到递增的纹理单元。这允许一个网格携带任意数量的纹理。
+原文的难点在于：它事先并不知道这个网格（如果有的话）有多少纹理、纹理是什么类型。所以它设定了一个命名标准：每个漫反射纹理命名为 `texture_diffuseN`、每个镜面纹理命名为 `texture_specularN`（`N` 从 1 开始），着色器中据此声明 `uniform sampler2D texture_diffuse1; texture_diffuse2; ...`，`Draw` 函数在循环中拼出 uniform 名称、把每张贴图绑定到递增的纹理单元。可绑定和采样的数量仍受纹理单元、着色器采样器及各阶段资源限制约束，命名约定不能突破这些限制。
 
 > **重要：** 像这样的问题有很多种不同的解决方案。如果你不喜欢这个解决方案，你可以自己想一个解决办法。
 
@@ -181,7 +183,7 @@ void draw_mesh(const Mesh& mesh) {
 
 ## 练习
 
-- 给 `Vertex` 加一个 `glm::vec3 tangent` 成员（10-float 布局），同步修改 attribute 设置与 `static_assert`——体会布局约定一旦改动要动哪几处。
+- 给 `Vertex` 加一个 `glm::vec3 tangent` 成员，同步修改着色器输入与 attribute 设置，使用 `sizeof/offsetof` 查询新的布局——体会布局约定一旦改动要动哪几处。
 - 把 `light_mesh` 的 diffuse 换成一张 1×1 白色纹理（提示：`glTexImage2D` 宽高传 1），验证「多绑定纹理不采样无影响」的说法。
 - 按原文的 `texture_diffuseN` 命名标准扩展 `Mesh`，支持一个网格多张漫反射贴图（`std::vector` + 循环拼接 uniform 名）。
 
@@ -209,7 +211,7 @@ cmake --build --preset mingw-gcc-debug
 
 本节把散装 GPU 样板收拢成一个抽象：
 
-- **局部（Vertex/Mesh 结构体）**：顶点从裸 float 变成结构体，布局在类型里自描述；Mesh 打包 VAO/VBO/EBO + 索引数 + 材质三件套。结构体内存连续，可以整块上传；偏移量用固定常量 + `static_assert`（`offsetof` 对非标准布局类型是有条件支持的）。
+- **局部（Vertex/Mesh 结构体）**：顶点从裸 float 变成结构体，布局在类型里自描述；Mesh 打包 VAO/VBO/EBO + 索引数 + 材质三件套。顶点数组连续，可以整块上传；成员偏移用 `offsetof`、步长用 `sizeof`，通过类型特征断言检查布局前提。
 - **局部（三函数生命周期）**：`make_mesh` 上传一次、`draw_mesh` 绘制一条龙、`destroy_mesh` 在上下文销毁前显式释放；VAO 记录 attribute 布局与 EBO 绑定。
 - **整体（最后一块缺口）**：Mesh 解决了「一份几何怎么画」，但模型文件里有**几十个 mesh、每个带不同材质**——谁来挨个调用 `make_mesh` 并管理它们？下一节的 **Model** 沿 aiNode 节点树递归遍历，把整个模型文件变成 `std::vector<Mesh>`，并从 aiMaterial 读取贴图路径完成加载。
 

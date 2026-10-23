@@ -6,9 +6,8 @@
 | 作者 | Joey de Vries |
 | 翻译 | Krasjet, [Django](http://bullteacher.com/) |
 | 校对 | 暂未校对 |
-| 中文底本 | [LearnOpenGL-CN 上游固定版本](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/04%20Advanced%20OpenGL/11%20Anti%20Aliasing.md)，`new-theme` / `331560886468e28f28326429334fc48470f9c27b` |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/04%20Advanced%20OpenGL/11%20Anti%20Aliasing.md) |
 | 本仓库示例 | [`apps/04_advanced_opengl/11_anti_aliasing/main.cpp`](../../apps/04_advanced_opengl/11_anti_aliasing/main.cpp) |
-| 修订 | 按上游完整小节顺序重写，技术差异见正文；[逐项覆盖清单](coverage.md) |
 
 **MSAA 在一个像素内保留多个覆盖和深度/模板样本，以更细的几何覆盖信息平滑图元边缘。** 模型边缘连续变化，最终图像却只能用有限像素表示，单个覆盖判定容易形成阶梯，这种取样失真称为走样（aliasing）。
 

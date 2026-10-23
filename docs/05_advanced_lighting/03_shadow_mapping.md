@@ -6,9 +6,8 @@
 | 作者 | Joey de Vries |
 | 翻译 | [Django](http://bullteacher.com/) |
 | 校对 | gjy_1992, [1i9h7_b1u3](https://github.com/1012796366/) |
-| 中文底本 | [LearnOpenGL-CN 固定版本](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/05%20Advanced%20Lighting/03%20Shadows/01%20Shadow%20Mapping.md)，`new-theme` / `331560886468e28f28326429334fc48470f9c27b` |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/05%20Advanced%20Lighting/03%20Shadows/01%20Shadow%20Mapping.md) |
 | 本仓库示例 | [main.cpp](../../apps/05_advanced_lighting/03_shadow_mapping/main.cpp) |
-| 修订与范围 | [逐项覆盖与验证记录](coverage.md)；纯 GFM，代码片段逐字取自对应源码 |
 
 **阴影贴图保存光源视角下最近的深度；相机绘制每个表面时，再到同一光源空间比较它是否被挡住。** 阴影不是把背光面统一涂黑，也不由距离相机的远近决定。图中的阴影让悬空箱子、地面和其他箱子的空间关系更容易辨认。
 

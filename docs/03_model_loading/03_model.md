@@ -4,8 +4,10 @@
 | --- | --- |
 | 原文 | [Model](http://learnopengl.com/#!Model-Loading/Model) |
 | 作者 | JoeyDeVries |
-| 来源 | LearnOpenGL-CN（本文基于其内容整理修订） |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/03%20Model%20Loading/03%20Model.md) |
 | 本仓库示例 | [`apps/03_model_loading/03_model/`](../../apps/03_model_loading/03_model/) |
+| 翻译 | Krasjet |
+| 校对 | [AoZhang](https://github.com/SuperAoao) |
 
 现在是时候接触 Assimp 并创建实际的加载和转换代码了。这个教程的目标是创建另一个封装来完整地表示一个模型，或者说是包含多个网格、多个纹理的模型。一个包含木制阳台、塔楼、甚至游泳池的房子可能仍会被加载为一个模型。我们会使用 Assimp 来加载模型，并将它转换至多个在上一节中创建的 `Mesh` 对象。
 
@@ -73,7 +75,7 @@ bool load_model(Model& model, const std::filesystem::path& path) {
 }
 ```
 
-通过设定 `aiProcess_Triangulate`，我们告诉 Assimp，如果模型不是（全部）由三角形组成，它需要将模型所有的图元形状变换为三角形。（原文还设定了 `aiProcess_FlipUVs`，在处理时翻转 y 轴的纹理坐标，以配合它「不翻转」的纹理加载方式；本仓库的加载端统一 `stbi_set_flip_vertically_on_load(1)`，所以**不用** FlipUVs，避免二次翻转——详见上一节的说明。）
+`aiProcess_Triangulate` 将多边形面拆为三角形，但不会把点和线变成三角形。本例资源只包含多边形面，处理后可用 `GL_TRIANGLES` 绘制；泛用导入器还需检查或过滤其他图元类型。（原文还设定了 `aiProcess_FlipUVs`，在处理时翻转 y 轴的纹理坐标，以配合它「不翻转」的纹理加载方式；本仓库的加载端统一 `stbi_set_flip_vertically_on_load(1)`，所以**不用** FlipUVs，避免二次翻转——详见上一节的说明。）
 
 在我们加载了模型之后，我们会检查场景和其根节点不为 null，并且检查了它的一个标记（Flag），来查看返回的数据是不是不完整的。如果遇到了任何错误，我们都会通过导入器的 `GetErrorString` 函数来报告错误并返回。我们也获取了文件路径的目录路径（原文用 `path.substr(0, path.find_last_of('/'))`，本仓库用 `std::filesystem::path::parent_path`，等价且更稳）。
 
@@ -195,7 +197,7 @@ void process_node(Model& model, const aiNode* node, const aiScene* scene) {
 渲染循环里遍历 `model.meshes`，逐个上传各自的 shininess 并绘制（逐字取自示例）：
 
 ```c++
-        // Assimp: stage.obj 的顶点已是世界坐标，节点树变换为单位阵，model 保持恒等。
+        // Assimp: stage.obj 的节点变换为单位阵；model 恒等时模型坐标与世界坐标重合。
         const glm::mat4 model{1.0F};
         glUniformMatrix4fv(glGetUniformLocation(object_program, "model"), 1, GL_FALSE,
                            glm::value_ptr(model));
@@ -218,8 +220,8 @@ loaded 'stage.obj': 3 mesh(es)
 
 ![](../img/03/03/model.png)
 
-> **常见误解：** OBJ 文件里的顶点坐标一定要再乘节点变换才是世界坐标。
-> **纠正：** 不一定——取决于导出设置。多数建模软件导出 OBJ 时会把所有平移旋转**直接烘焙进顶点**，节点树全为单位阵；但导出 FBX/glTF 常保留层级。所以「顶点已是世界坐标」是 stage.obj 的**事实**（示例注释也是这么写的），不是通用规律。判断方法：加载后打印根/子节点的 `mTransformation`，若非单位阵就必须在 `process_node` 里逐级累乘（这正是 01_assimp 的 `render_node` 做的事）。
+> **常见误解：** 模型文件中的顶点天然就是世界坐标。
+> **纠正：** 导入的顶点处于模型或网格的局部坐标约定中；它与应用世界坐标的关系由节点变换和应用设置的 model 矩阵决定。本资源的节点变换为单位阵，示例又使用恒等 model，数值才与世界坐标相同。更换资源时应检查节点树；存在节点变换时应按层级累乘，法线还需对应的逆转置变换，不能只对位置应用矩阵。
 
 > **进阶（渲染一个模型要多少次绘制调用）：** 本例 3 个 mesh = 3 次 `draw_mesh` = 3 次 draw call。真实模型（一个游戏角色）几百个 mesh、几十张贴图，逐 mesh 绘制会撞上 CPU 提交瓶颈。工业界的优化方向：**纹理图集**（把多张贴图拼一张，多 mesh 合并成一个 draw）、**实例化渲染**（`glDrawArraysInstanced`，一个 draw 画 N 份）、**批处理**（顶点数据合并 + 用顶点属性区分材质）。前提都是本节的抽象：先把「模型 = mesh 集合」理清楚，才谈得上合并。
 

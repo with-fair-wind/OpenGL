@@ -6,7 +6,7 @@
 | 作者 | Joey de Vries |
 | 翻译 | [J.moons](https://github.com/JiangMuWen) |
 | 校对 | Krasjet, JeremyYvv |
-| 来源 | [LearnOpenGL-CN 固定底本](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/07%20PBR/01%20Theory.md)；本仓库整理、纠错与代码适配 |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/07%20PBR/01%20Theory.md) |
 
 **PBR 用可解释的材质参数与线性光照计算，让材质在不同光照下保持一致的响应规律。** 本文以金属度工作流、Lambert 漫反射和各向同性微表面镜面反射为范围；它不是所有基于物理渲染方法的定义。
 

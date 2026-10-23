@@ -6,9 +6,8 @@
 | 作者 | Joey de Vries |
 | 翻译 | Krasjet |
 | 校对 | 暂未校对 |
-| 中文底本 | [LearnOpenGL-CN 上游固定版本](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/04%20Advanced%20OpenGL/04%20Face%20culling.md)，`new-theme` / `331560886468e28f28326429334fc48470f9c27b` |
+| 来源 | [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/04%20Advanced%20OpenGL/04%20Face%20culling.md) |
 | 本仓库示例 | [`apps/04_advanced_opengl/04_face_culling/main.cpp`](../../apps/04_advanced_opengl/04_face_culling/main.cpp) |
-| 修订 | 按上游完整小节顺序重写，技术差异见正文；[逐项覆盖清单](coverage.md) |
 
 **面剔除按三角形投影后的环绕顺序判断正反面，把不需要的一面在片段阶段之前剔除。** 对封闭箱子而言，从外面看通常只需要面向观察者的表面；草叶、纸张、打开的薄壳却可能需要两面，不能直接套用同一策略。
 

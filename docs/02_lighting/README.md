@@ -1,8 +1,8 @@
 # 光照教程（02 章）
 
-本目录是 OpenGL Lab 仓库的光照章节中文教程，共 6 篇，对应 [LearnOpenGL](http://learnopengl.com) 的 Lighting 部分。
+本目录是 OpenGL Lab 仓库的光照章节中文教程，共 7 篇（6 个独立示例及 1 篇复习），对应 [LearnOpenGL](http://learnopengl.com) 的 Lighting 部分。
 
-内容基于 [LearnOpenGL-CN](https://github.com/with-fair-wind/LearnOpenGL-CN) 翻译整理，并做了两方面工作：
+教程参考 [LearnOpenGL-CN](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN) 与 [LearnOpenGL 英文原文](https://learnopengl.com/)，技术解释结合规范和本仓库实现修订。内容对应与待补齐项见 [覆盖清单](coverage.md)。
 
 - **修正**：修正译文中术语不准确、病句、笔误等表述问题，统一专业术语（如「渲染」而非「呈现」、Esc = 退出键）。
 - **完善**：从局部到整体的视角补充讲解——每个关键概念先给"一句话核心"，再明确职责边界（OpenGL 规范 / GLFW / 显卡驱动 / 应用程序各自负责什么），配全景链路图说明概念在整个渲染管线中的位置，并用本仓库实际代码逐段讲解。
@@ -17,11 +17,12 @@
 | 04 | [光照贴图](04_lighting_maps.md) | `apps/02_lighting/04_lighting_maps/` | 漫反射/镜面贴图（sampler2D 材质）、逐片段材质参数 |
 | 05 | [投光物](05_light_casters.md) | `apps/02_lighting/05_light_casters/` | 平行光、点光源距离衰减（二次多项式）、聚光灯锥角 |
 | 06 | [多光源](06_multiple_lights.md) | `apps/02_lighting/06_multiple_lights/` | GLSL 光照函数组合、uniform 数组、方向光+点光源+聚光灯同屏 |
+| 07 | [复习](07_review.md) | — | 完整术语表、光照模型与数据流回顾 |
 
 ## 如何跟随学习
 
 1. 按篇章顺序阅读；每篇末尾的"本章整体回顾"会串起本节在整个光照管线中的位置。
-2. 每篇都有对应的仓库示例，在"本仓库示例"小节给出示例路径、构建与运行命令。
+2. 第 01–06 篇有对应的仓库示例，在"本仓库示例"小节给出示例路径、构建与运行命令。
 3. 构建与运行方式总览见 [`docs/build.md`](../build.md)（Conan 2 + CMake presets，默认 `mingw-gcc-debug`）。
 
 运行示例（默认 MinGW GCC Debug）：
