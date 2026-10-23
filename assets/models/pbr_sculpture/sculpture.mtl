@@ -1,0 +1,15 @@
+# Names map explicitly to five linear/sRGB texture sets in main.cpp.
+newmtl rusted_iron
+Kd 1 1 1
+
+newmtl gold
+Kd 1 1 1
+
+newmtl grass
+Kd 1 1 1
+
+newmtl plastic
+Kd 1 1 1
+
+newmtl wall
+Kd 1 1 1

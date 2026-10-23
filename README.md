@@ -1,6 +1,6 @@
 # OpenGL Lab
 
-这是一个面向 OpenGL 新手的现代 C++ 学习仓库，目标平台为 Windows。代码路线主要参考 [LearnOpenGL](https://learnopengl.com/)，中文教程基于 [LearnOpenGL-CN 官方上游](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN) 整理修订，并结合规范修正技术表述。当前已有入门、光照、模型加载、高级 OpenGL 和高级光照五个章节的代码与教程；第 04 章本次逐节重修的对应范围和验证结果见[覆盖清单](docs/04_advanced_opengl/coverage.md)，第 05 章的逐项实现与验证见[对应清单](docs/05_advanced_lighting/coverage.md)，前 01–03 章需另按加强后的完整性规范核验。
+这是一个面向 OpenGL 新手的现代 C++ 学习仓库，目标平台为 Windows。代码路线主要参考 [LearnOpenGL](https://learnopengl.com/)，中文教程基于 [LearnOpenGL-CN 官方上游](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN) 整理修订，并结合规范修正技术表述。当前已有入门、光照、模型加载、高级 OpenGL、高级光照和 PBR 六个章节的代码与教程；第 04、05、06 章的逐节对应范围和验证结果分别见[高级 OpenGL](docs/04_advanced_opengl/coverage.md)、[高级光照](docs/05_advanced_lighting/coverage.md)与 [PBR 覆盖清单](docs/06_pbr/coverage.md)，前 01–03 章需另按加强后的完整性规范核验。
 
 ## 当前目标
 
@@ -19,8 +19,9 @@
 | 03 模型加载 | [3 篇教程](docs/03_model_loading/README.md) | 3 个主示例 |
 | 04 高级 OpenGL | [11 篇教程与覆盖清单](docs/04_advanced_opengl/README.md) | 11 个主示例，48 个模式 |
 | 05 高级光照 | [10 篇教程与覆盖清单](docs/05_advanced_lighting/README.md) | 10 个主示例，63 个模式 |
+| 06 PBR | [4 篇教程与覆盖清单](docs/06_pbr/README.md) | 3 个主示例，23 个模式；理论篇无独立目标 |
 
-合计 40 篇教程、37 个主示例和 3 个练习目标。教程使用 GitHub Markdown，图片存放在 `docs/img/`；实际示例代码片段对应 `apps/` 源码，概念示例另行标明。后续接续 PBR 等专题，尚未创建对应教程和示例。
+合计 44 篇教程、40 个主示例和 3 个练习目标。教程使用 GitHub Markdown，图片存放在 `docs/img/`；实际示例代码片段对应 `apps/` 源码，概念示例另行标明。PBR 之后接续实践专题，尚未创建对应教程和示例。
 
 ## 依赖
 
@@ -57,7 +58,8 @@ Conan 当前管理这些库：
 |   |   |-- 02_mesh/
 |   |   `-- 03_model/
 |   |-- 04_advanced_opengl/   # 11 例：深度测试至离屏 MSAA
-|   `-- 05_advanced_lighting/ # 10 例：Blinn-Phong 至 SSAO
+|   |-- 05_advanced_lighting/ # 10 例：Blinn-Phong 至 SSAO
+|   `-- 06_pbr/               # 3 例：直接光照、漫反射与镜面 IBL
 |-- assets/                  # 纹理与模型；GLSL 内嵌在示例源码中
 |   |-- textures/
 |   `-- models/
@@ -68,6 +70,8 @@ Conan 当前管理这些库：
 |   |-- 02_lighting/
 |   |-- 03_model_loading/
 |   |-- 04_advanced_opengl/
+|   |-- 05_advanced_lighting/
+|   |-- 06_pbr/
 |   |-- img/
 |   `-- build.md
 |-- CMakeLists.txt           # 根构建入口
@@ -115,3 +119,5 @@ Conan 当前管理这些库：
 继续扩展时沿用独立示例结构；需要引入可复用封装时，再单独设计公共模块及其测试。
 
 第五阶段进入[高级光照](docs/05_advanced_lighting/README.md)：Blinn-Phong → Gamma → 二维/点光源阴影 → 法线/视差贴图 → HDR/泛光 → 延迟着色与 SSAO。10 个独立目标支持有限帧运行和按模式截图，教学图片、材质和验证边界见该章覆盖清单。
+
+第六阶段进入 [PBR](docs/06_pbr/README.md)：微表面/辐射度量理论 → 直接光 BRDF → 漫反射环境卷积 → 镜面分割求和。五套真实材质、HDR 六面捕获、GGX 预过滤、BRDF LUT、模型导入与双环境均有对应代码或模式；上游编号差异和技术纠错见覆盖清单。

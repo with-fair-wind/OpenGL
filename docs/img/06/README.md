@@ -1,0 +1,64 @@
+# 第 06 章图片记录
+
+中文上游：LearnOpenGL-CN/LearnOpenGL-CN，new-theme，固定提交 `331560886468e28f28326429334fc48470f9c27b`。41 个原图文件，正文 43 次引用，保留其顺序与重复说明位置。作者 Joey de Vries，原文/翻译/校对详见各篇元数据；图中其他作品归原作者。以下文件原样复制，Git blob SHA-1 已核对。
+
+| 本地图片 | 固定上游文件 | Git blob SHA-1 |
+| --- | --- | --- |
+| [01/ibl_specular_result_textured.png](01/ibl_specular_result_textured.png) | [docs/img/07/01/ibl_specular_result_textured.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/01/ibl_specular_result_textured.png) | `576c42d8e1607069b90c9d9edb004add16063c91` |
+| [01/microfacets.png](01/microfacets.png) | [docs/img/07/01/microfacets.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/01/microfacets.png) | `f2b6458e5f302491073b5503c8d73d96b6013957` |
+| [01/microfacets_light_rays.png](01/microfacets_light_rays.png) | [docs/img/07/01/microfacets_light_rays.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/01/microfacets_light_rays.png) | `44ce40d27ca8f35889bceed86d7114468deeb2f8` |
+| [01/ndf.png](01/ndf.png) | [docs/img/07/01/ndf.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/01/ndf.png) | `d0ebeadb81859e19af82414c94619ab94d430e69` |
+| [01/surface_reaction.png](01/surface_reaction.png) | [docs/img/07/01/surface_reaction.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/01/surface_reaction.png) | `27f1d7cf713fc18e6568bdfaca8f8415453dc64b` |
+| [01/daylight_spectral_distribution.png](01/daylight_spectral_distribution.png) | [docs/img/07/01/daylight_spectral_distribution.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/01/daylight_spectral_distribution.png) | `805cd213806bf57972425b33358d775a119ac112` |
+| [01/solid_angle.png](01/solid_angle.png) | [docs/img/07/01/solid_angle.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/01/solid_angle.png) | `6e9043d07849c45a0c3944b5b6eb90dd3071131b` |
+| [01/radiant_intensity.png](01/radiant_intensity.png) | [docs/img/07/01/radiant_intensity.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/01/radiant_intensity.png) | `3b47790a33dc2c83d6c4944cd5c2c1d07d42f2c4` |
+| [01/radiance.png](01/radiance.png) | [docs/img/07/01/radiance.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/01/radiance.png) | `9332bc2aebed190d6aa35eadcee36437f86693a5` |
+| [01/hemisphere.png](01/hemisphere.png) | [docs/img/07/01/hemisphere.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/01/hemisphere.png) | `dd8ed31603a96ff7452c936962d7a761a453d11e` |
+| [01/geometry_shadowing.png](01/geometry_shadowing.png) | [docs/img/07/01/geometry_shadowing.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/01/geometry_shadowing.png) | `568bff84963e3354ea181a7045836403935c561b` |
+| [01/geometry.png](01/geometry.png) | [docs/img/07/01/geometry.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/01/geometry.png) | `2636cbe7df11e789e59258a6a0a5dc41dc130f84` |
+| [01/fresnel.png](01/fresnel.png) | [docs/img/07/01/fresnel.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/01/fresnel.png) | `30dea084eeafee9522a25a2c807f990864edba02` |
+| [01/textures.png](01/textures.png) | [docs/img/07/01/textures.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/01/textures.png) | `d8b23b7638e04f14ea8a993be542136126daf908` |
+| [02/lighting_radiance_direct.png](02/lighting_radiance_direct.png) | [docs/img/07/02/lighting_radiance_direct.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/02/lighting_radiance_direct.png) | `6c76916959536de76352aa1e94f428d930d7fc6c` |
+| [02/lighting_linear_vs_non_linear_and_hdr.png](02/lighting_linear_vs_non_linear_and_hdr.png) | [docs/img/07/02/lighting_linear_vs_non_linear_and_hdr.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/02/lighting_linear_vs_non_linear_and_hdr.png) | `5bdab0db9bea4fc114f579f651f2a19795c2cad8` |
+| [02/lighting_result.png](02/lighting_result.png) | [docs/img/07/02/lighting_result.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/02/lighting_result.png) | `3bbca2319ca934a7b228dadbf3253c489049a8d0` |
+| [02/lighting_textured.png](02/lighting_textured.png) | [docs/img/07/02/lighting_textured.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/02/lighting_textured.png) | `da2a472c5dc56071681b8fd814f4e52d91f6f2e7` |
+| [03/ibl_hemisphere_sample.png](03/ibl_hemisphere_sample.png) | [docs/img/07/03/01/ibl_hemisphere_sample.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/03/01/ibl_hemisphere_sample.png) | `a3f7299d4e93fff627a078aedccdeb0ce8f6203b` |
+| [03/ibl_irradiance.png](03/ibl_irradiance.png) | [docs/img/07/03/01/ibl_irradiance.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/03/01/ibl_irradiance.png) | `2edcac6a3dd7b250ece2ea7fd6f9cb14e286da9a` |
+| [03/ibl_hdr_radiance.png](03/ibl_hdr_radiance.png) | [docs/img/07/03/01/ibl_hdr_radiance.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/03/01/ibl_hdr_radiance.png) | `645e31f194c5af5fdbd35f990c6ebd290b845c86` |
+| [03/ibl_equirectangular_projection.png](03/ibl_equirectangular_projection.png) | [docs/img/07/03/01/ibl_equirectangular_projection.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/03/01/ibl_equirectangular_projection.png) | `f9fc5e53afc8d4bfe57df3bf0fc0a3179ce9f5ac` |
+| [03/ibl_hdr_environment_mapped.png](03/ibl_hdr_environment_mapped.png) | [docs/img/07/03/01/ibl_hdr_environment_mapped.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/03/01/ibl_hdr_environment_mapped.png) | `6807e33e32bfd8f091b2e4fc17f57bdd15d97ce3` |
+| [03/ibl_hemisphere_sample_normal.png](03/ibl_hemisphere_sample_normal.png) | [docs/img/07/03/01/ibl_hemisphere_sample_normal.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/03/01/ibl_hemisphere_sample_normal.png) | `53ebc7cac7a26ddab1bb6d061ed949d5b3ecf636` |
+| [03/ibl_spherical_integrate.png](03/ibl_spherical_integrate.png) | [docs/img/07/03/01/ibl_spherical_integrate.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/03/01/ibl_spherical_integrate.png) | `6504c8af23299c15239d9e0ca3029240d0d554db` |
+| [03/ibl_irradiance_map_background.png](03/ibl_irradiance_map_background.png) | [docs/img/07/03/01/ibl_irradiance_map_background.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/03/01/ibl_irradiance_map_background.png) | `b7e5143403069acb319aa5dc284f132fd67f7f96` |
+| [03/lighting_fresnel_no_roughness.png](03/lighting_fresnel_no_roughness.png) | [docs/img/07/03/01/lighting_fresnel_no_roughness.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/03/01/lighting_fresnel_no_roughness.png) | `bf32609a55a797f9cab3a409224f656b404675b1` |
+| [03/ibl_irradiance_result.png](03/ibl_irradiance_result.png) | [docs/img/07/03/01/ibl_irradiance_result.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/03/01/ibl_irradiance_result.png) | `1b45d362e5130eec2c818f9e34f452aa61130575` |
+| [04/ibl_prefilter_map.png](04/ibl_prefilter_map.png) | [docs/img/07/03/02/ibl_prefilter_map.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/03/02/ibl_prefilter_map.png) | `9d87f1695b7cd96854ab9e66d86acf37fd3e7b36` |
+| [04/ibl_grazing_angles.png](04/ibl_grazing_angles.png) | [docs/img/07/03/02/ibl_grazing_angles.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/03/02/ibl_grazing_angles.png) | `7c7459139f055fbb921539fd6e83ea07760b990e` |
+| [04/ibl_brdf_lut.png](04/ibl_brdf_lut.png) | [docs/img/07/03/02/ibl_brdf_lut.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/03/02/ibl_brdf_lut.png) | `56c98467505ceb3869d1d3b263aaa8a61346cc29` |
+| [04/ibl_specular_lobe.png](04/ibl_specular_lobe.png) | [docs/img/07/03/02/ibl_specular_lobe.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/03/02/ibl_specular_lobe.png) | `1d5063027c9b576a1861de010c524270d067798e` |
+| [04/ibl_pdf.png](04/ibl_pdf.png) | [docs/img/07/03/02/ibl_pdf.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/03/02/ibl_pdf.png) | `7fb87708a61f8d46f09095d9916361e517fc2a9c` |
+| [04/ibl_low_discrepancy_sequence.png](04/ibl_low_discrepancy_sequence.png) | [docs/img/07/03/02/ibl_low_discrepancy_sequence.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/03/02/ibl_low_discrepancy_sequence.png) | `60169f2ee8ff2e1c6394181fb7b0e9f52aacd194` |
+| [04/ibl_prefilter_map_sample.png](04/ibl_prefilter_map_sample.png) | [docs/img/07/03/02/ibl_prefilter_map_sample.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/03/02/ibl_prefilter_map_sample.png) | `301be5db98ef95e2e455af236d7b76210184ab61` |
+| [04/ibl_prefilter_seams.png](04/ibl_prefilter_seams.png) | [docs/img/07/03/02/ibl_prefilter_seams.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/03/02/ibl_prefilter_seams.png) | `78e56a5f194d97b96aae3bfe1904fefc965ace5b` |
+| [04/ibl_prefilter_dots.png](04/ibl_prefilter_dots.png) | [docs/img/07/03/02/ibl_prefilter_dots.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/03/02/ibl_prefilter_dots.png) | `947fc71b5d55cd96822ec0f500dd1b2c73370e7c` |
+| [04/ibl_specular_result.png](04/ibl_specular_result.png) | [docs/img/07/03/02/ibl_specular_result.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/03/02/ibl_specular_result.png) | `49b2903a8fc6ada0bb6e049745ec53f090a5e972` |
+| [04/ibl_specular_result_textured.png](04/ibl_specular_result_textured.png) | [docs/img/07/03/02/ibl_specular_result_textured.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/03/02/ibl_specular_result_textured.png) | `576c42d8e1607069b90c9d9edb004add16063c91` |
+| [04/ibl_specular_result_model.png](04/ibl_specular_result_model.png) | [docs/img/07/03/02/ibl_specular_result_model.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/03/02/ibl_specular_result_model.png) | `625516682d5415f3238ddbc3f9c938e458513996` |
+| [04/ibl_specular_result_different_environments.png](04/ibl_specular_result_different_environments.png) | [docs/img/07/03/02/ibl_specular_result_different_environments.png](https://github.com/LearnOpenGL-CN/LearnOpenGL-CN/blob/331560886468e28f28326429334fc48470f9c27b/docs/img/07/03/02/ibl_specular_result_different_environments.png) | `01dba12a1041c7c8e9213952c136c815e885ef58` |
+
+## 本仓库实测图
+
+本仓库在 Windows、MinGW GCC Debug、NVIDIA GTX 1660 上以 `--frames 3 --mode M --capture` 保存 RGB PPM 后无损转为 PNG。示例使用相同显示映射；这些实测图不替代上游原理图。
+
+| 图片 | 实际模式 |
+| --- | --- |
+| [02/local_default.png](02/local_default.png) | 第 02 篇模式 0 |
+| [03/local_default.png](03/local_default.png) | 第 03 篇模式 0 |
+| [04/local_default.png](04/local_default.png) | 第 04 篇模式 0 |
+| [04/local_mode_12.png](04/local_mode_12.png) | 第 04 篇模式 12 |
+| [04/local_mode_3.png](04/local_mode_3.png) | 第 04 篇模式 3 |
+| [04/local_mode_4.png](04/local_mode_4.png) | 第 04 篇模式 4 |
+| [04/local_mode_5.png](04/local_mode_5.png) | 第 04 篇模式 5 |
+| [04/local_mode_9.png](04/local_mode_9.png) | 第 04 篇模式 9 |
+
+材质、HDR 与模型来源见[运行资源记录](../../../assets/chapter06_resources.md)，内容和验证边界见[覆盖清单](../../06_pbr/coverage.md)。

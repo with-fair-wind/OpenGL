@@ -367,3 +367,26 @@ cmake --build --preset mingw-gcc-debug --target 05_advanced_lighting__10_ssao
 02_gamma_correction 使用明确的 GL_SRGB8_ALPHA8 离屏附件演示硬件输出编码，随后关闭 sRGB 转换并复制编码值到窗口；不假设默认后缓冲响应 GLFW sRGB 请求。09_deferred_shading 在同尺寸、同 D24S8 格式的两个自建目标之间复制深度，再画正向光源标记，最后统一输出。所有需要可变尺寸附件的目标按帧缓冲物理像素更新，最小化时暂停绘制。
 
 05_normal_mapping、09_deferred_shading 与 10_ssao 使用已有 Assimp 包；所有例子复用 stb_image。新增材质资源与切线/图片方向约定见[资源记录](../assets/chapter05_resources.md)。有限帧运行报告编译链接、必需 uniform、资源、FBO、截图和 OpenGL 错误，仍不能替代完整交互与性能验证。
+
+## PBR 示例
+
+第 06 章包含 4 篇教程与 3 个独立目标；理论篇没有独立可执行程序。沿用既有 preset 和 Conan 依赖，GLSL 内嵌在各例 main.cpp，helper 逐例复制。完整内容、模式编号与验证边界见 [PBR 索引](06_pbr/README.md)及[覆盖清单](06_pbr/coverage.md)。
+
+| 示例目录 | 目标名称 | 模式与主要观察项 |
+| --- | --- | --- |
+| `02_lighting` | `06_pbr__02_lighting` | 5：参数球阵列、五贴图锈铁、输出错误与几何法线对照 |
+| `03_diffuse_irradiance` | `06_pbr__03_diffuse_irradiance` | 5：HDR 全景、环境六面、E/π 卷积、漫反射 IBL |
+| `04_specular_ibl` | `06_pbr__04_specular_ibl` | 13：GGX 五层预过滤、LUT、五材质、模型、双环境与采样对照 |
+
+```powershell
+cmake --preset mingw-gcc-debug
+cmake --build --preset mingw-gcc-debug --target 06_pbr__02_lighting 06_pbr__03_diffuse_irradiance 06_pbr__04_specular_ibl
+.\build\mingw-gcc-debug\apps\06_pbr\04_specular_ibl\06_pbr__04_specular_ibl.exe --mode 3
+.\build\mingw-gcc-debug\apps\06_pbr\04_specular_ibl\06_pbr__04_specular_ibl.exe --frames 3 --mode 4 --capture build\pbr_model.ppm
+```
+
+Esc 退出，WASD/鼠标控制相机，滚轮改变 FOV，空格切换模式。镜面示例在切换场景时设置相应初始视角；预过滤天空盒诊断面向两个立方体面的交界，以便观察跨面过滤。模式 8/11 分别启用/禁用无缝过滤。有限帧、模式和截图参数含义与前两章相同，多配置生成器仍需在目标目录下增加 `Debug/Release` 层。
+
+IBL 在启动时实际计算环境 cubemap、E/π 卷积、粗糙度 mip 和 BRDF LUT，第一帧前可能花费时间；`--frames` 不包含预计算过程。512² 环境普通 mip 与 128² 五层 GGX 输出有不同用途；32² 漫反射纹理存 E/π，LUT 使用 512² RG16F。颜色在 shader 合成后统一做 Reinhard 与近似输出编码，关闭 `GL_FRAMEBUFFER_SRGB` 避免重复编码。
+
+资源由 `OPENGL_LAB_ASSET_ROOT` 定位。五套材质共 25 张图片、两张 HDR 和自制模型来源见[资源记录](../assets/chapter06_resources.md)；原始材质保留上游分辨率，镜面程序同时加载五套材质。04 使用已有 Assimp 导入多部件模型，按 MTL 名称映射到明确材质集合，不假定 OBJ/MTL 自带统一 PBR 语义。FBO 完整性、必需 uniform、shader/资源/截图失败会阻止继续运行；最小化时暂停绘制，恢复后按实际帧缓冲尺寸设置视口。

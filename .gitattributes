@@ -35,6 +35,7 @@ CMakeLists.txt text eol=lf
 *.png        binary
 *.jpg        binary
 *.jpeg       binary
+*.hdr        binary
 *.gif        binary
 *.ico        binary
 *.pdf        binary

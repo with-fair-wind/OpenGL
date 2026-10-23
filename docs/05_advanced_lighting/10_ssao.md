@@ -348,4 +348,4 @@ cmake --build --preset mingw-gcc-debug --target 05_advanced_lighting__10_ssao
 
 技术核校：[英文原文](https://learnopengl.com/Advanced-Lighting/SSAO)、[OpenGL 3.3 Core 规范](https://registry.khronos.org/OpenGL/specs/gl/glspec33.core.pdf)、[GLSL 3.30 规范](https://registry.khronos.org/OpenGL/specs/gl/GLSLangSpec.3.30.pdf)。
 
-下一节：后续教程章节尚未编写；PBR 等专题按仓库后续计划接续。
+下一节：[PBR：理论](../06_pbr/01_theory.md)。

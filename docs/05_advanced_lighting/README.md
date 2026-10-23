@@ -44,4 +44,4 @@ flowchart LR
 
 MinGW GCC Debug / GTX 1660 上 63 个模式均运行 3 帧并保存截图。其他工具链/显卡、完整键鼠/缩放和性能基准未实测；未以该结果声称跨平台完成或固定帧率。原文中的自动曝光、位置重建、tile-based 和时间滤波仍作为扩展说明，当前没有对应实现。
 
-上一章：[高级 OpenGL](../04_advanced_opengl/README.md) · 后续章节尚未编写。
+上一章：[高级 OpenGL](../04_advanced_opengl/README.md) · 下一章：[PBR](../06_pbr/README.md)。

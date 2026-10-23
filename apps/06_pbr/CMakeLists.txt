@@ -1,0 +1,3 @@
+add_subdirectory(02_lighting)
+add_subdirectory(03_diffuse_irradiance)
+add_subdirectory(04_specular_ibl)
